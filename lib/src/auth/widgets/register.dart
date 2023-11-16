@@ -7,10 +7,12 @@ class RegisterScreen extends StatelessWidget {
     super.key,
     required this.controller,
     required this.showLogin,
+    required this.onLoginSuccess,
   });
 
   final AuthController controller;
   final VoidCallback showLogin;
+  final VoidCallback onLoginSuccess;
 
   @override
   Widget build(BuildContext context) {

@@ -14,10 +14,12 @@ class LoginScreen extends StatefulWidget {
     required this.showForgotPassword,
     required this.showRegister,
     required this.showEmailVerify,
+    required this.onLoginSuccess,
   }) : super(key: key);
 
   final AuthController controller;
   final VoidCallback showForgotPassword, showRegister, showEmailVerify;
+  final VoidCallback onLoginSuccess;
 
   @override
   State<LoginScreen> createState() => _LoginScreenState();
@@ -85,7 +87,7 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
-  Future<void> login(AuthProvider provider) async {
+  Future<void> login(BuildContext context, AuthProvider provider) async {
     try {
       setError(null);
       debugPrint('Logging in with ${provider.name}');
@@ -94,6 +96,7 @@ class _LoginScreenState extends State<LoginScreen> {
       } else if (provider is OAuth2AuthProvider) {
         await provider.authenticate(openUrl);
       }
+      if (provider.isLoggedIn) widget.onLoginSuccess();
     } catch (e) {
       debugPrint('Error logging in with ${provider.name}: $e');
       setError(e);
@@ -102,7 +105,6 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
-    const constraints = BoxConstraints(maxWidth: 300);
     final fonts = Theme.of(context).textTheme;
     final colors = Theme.of(context).colorScheme;
     const gap = SizedBox(height: 20);
@@ -231,7 +233,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         if (emailProvider == null) return;
                         if (formKey.currentState!.validate()) {
                           formKey.currentState!.save();
-                          await login(emailProvider);
+                          await login(context, emailProvider);
                         }
                       },
                       child: const Text('Login'),
@@ -262,7 +264,7 @@ class _LoginScreenState extends State<LoginScreen> {
               children: [
                 Expanded(
                   child: FilledButton.tonal(
-                    onPressed: () => login(provider),
+                    onPressed: () => login(context, provider),
                     child: Text('Sign in with ${provider.label}'),
                   ),
                 ),

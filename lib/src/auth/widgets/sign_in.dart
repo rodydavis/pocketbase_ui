@@ -10,11 +10,13 @@ class SignInScreen extends StatefulWidget {
   const SignInScreen({
     Key? key,
     required this.controller,
+    required this.onLoginSuccess,
     this.background,
   }) : super(key: key);
 
   final AuthController controller;
   final Widget? background;
+  final VoidCallback onLoginSuccess;
 
   @override
   State<SignInScreen> createState() => _SignInScreenState();
@@ -57,6 +59,7 @@ class _SignInScreenState extends State<SignInScreen> {
             showForgotPassword: () => setScreen(_AuthScreen.forgot),
             showEmailVerify: () => setScreen(_AuthScreen.verify),
             showRegister: () => setScreen(_AuthScreen.register),
+            onLoginSuccess: widget.onLoginSuccess,
           ),
         _AuthScreen.forgot => ForgotPasswordScreen(
             key: const ValueKey('auth:forgot'),
@@ -67,6 +70,7 @@ class _SignInScreenState extends State<SignInScreen> {
             key: const ValueKey('auth:register'),
             controller: widget.controller,
             showLogin: () => setScreen(_AuthScreen.login),
+            onLoginSuccess: widget.onLoginSuccess,
           ),
         _AuthScreen.verify => EmailVerificationScreen(
             key: const ValueKey('auth:verify'),
