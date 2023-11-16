@@ -105,6 +105,8 @@ class ProfileScreen extends StatelessWidget {
                 ),
               );
             }
+            // TODO: Delete / logout
+            // TODO: Social auth link
             return const Center(
               child: Text('Error loading user info'),
             );
