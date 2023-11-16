@@ -48,65 +48,79 @@ class ProfileScreen extends StatelessWidget {
                 child: Center(
                   child: ConstrainedBox(
                     constraints: const BoxConstraints(maxWidth: 400),
-                    child: Card(
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          if (!verified)
-                            ListTile(
-                              title: const Text('Email Not Verified'),
-                              subtitle: const Text('Please verify your email'),
-                              leading: Icon(
-                                Icons.warning,
-                                color: Theme.of(context).colorScheme.error,
-                              ),
-                              trailing: OutlinedButton(
-                                onPressed: () {},
-                                child: const Text('Verify'),
-                              ),
-                            ),
-                          if (emailVisibility && email.isNotEmpty)
-                            ListTile(
-                              title: const Text('Email'),
-                              subtitle: Text(email),
-                              leading: const Icon(Icons.email),
-                              trailing: const Icon(Icons.edit),
-                            ),
-                          if (username.isNotEmpty)
-                            ListTile(
-                              title: const Text('Username'),
-                              subtitle: Text(username),
-                              leading: const Icon(Icons.person_outlined),
-                              trailing: const Icon(Icons.edit),
-                            ),
-                          if (displayName.isNotEmpty)
-                            ListTile(
-                              title: const Text('Display Name'),
-                              subtitle: Text(displayName),
-                              leading: const Icon(Icons.person),
-                              trailing: const Icon(Icons.edit),
-                            ),
-                          if (created.isNotEmpty)
-                            ListTile(
-                              title: const Text('Date Created'),
-                              subtitle: Text(created),
-                              leading: const Icon(Icons.calendar_today),
-                            ),
-                          if (updated.isNotEmpty)
-                            ListTile(
-                              title: const Text('Last Updated'),
-                              subtitle: Text(updated),
-                              leading: const Icon(Icons.calendar_today),
-                            ),
-                        ],
-                      ),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Card(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              if (!verified)
+                                ListTile(
+                                  title: const Text('Email Not Verified'),
+                                  subtitle:
+                                      const Text('Please verify your email'),
+                                  leading: Icon(
+                                    Icons.warning,
+                                    color: Theme.of(context).colorScheme.error,
+                                  ),
+                                  trailing: OutlinedButton(
+                                    onPressed: () {},
+                                    child: const Text('Verify'),
+                                  ),
+                                ),
+                              if (emailVisibility && email.isNotEmpty)
+                                ListTile(
+                                  title: const Text('Email'),
+                                  subtitle: Text(email),
+                                  leading: const Icon(Icons.email),
+                                  trailing: const Icon(Icons.edit),
+                                ),
+                              if (username.isNotEmpty)
+                                ListTile(
+                                  title: const Text('Username'),
+                                  subtitle: Text(username),
+                                  leading: const Icon(Icons.person_outlined),
+                                  trailing: const Icon(Icons.edit),
+                                ),
+                              if (displayName.isNotEmpty)
+                                ListTile(
+                                  title: const Text('Display Name'),
+                                  subtitle: Text(displayName),
+                                  leading: const Icon(Icons.person),
+                                  trailing: const Icon(Icons.edit),
+                                ),
+                            ],
+                          ),
+                        ),
+                        // TODO: Delete / logout
+                        // TODO: Social auth link
+                        Card(
+                          child: ExpansionTile(
+                            title: const Text('Additional Info'),
+                            leading: const Icon(Icons.info),
+                            children: [
+                              if (created.isNotEmpty)
+                                ListTile(
+                                  title: const Text('Date Created'),
+                                  subtitle: Text(created),
+                                  leading: const Icon(Icons.calendar_today),
+                                ),
+                              if (updated.isNotEmpty)
+                                ListTile(
+                                  title: const Text('Last Updated'),
+                                  subtitle: Text(updated),
+                                  leading: const Icon(Icons.calendar_today),
+                                ),
+                            ],
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ),
               );
             }
-            // TODO: Delete / logout
-            // TODO: Social auth link
             return const Center(
               child: Text('Error loading user info'),
             );
