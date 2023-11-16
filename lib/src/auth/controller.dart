@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:pocketbase/pocketbase.dart';
 
 import 'providers/base.dart';
+import 'providers/email.dart';
+import 'providers/oauth2.dart';
 
 /// Auth error event callback
 typedef AuthErrorCallback = FutureOr<void> Function(Object);
@@ -12,7 +14,11 @@ typedef User = (String, dynamic);
 
 /// Auth controller to manage auth lifecycle
 class AuthController extends ValueNotifier<User?> {
-  final List<AuthProvider> providers;
+  static List<AuthProvider> providers = [
+    EmailAuthProvider(),
+    AppleAuthProvider(),
+    GoogleAuthProvider(),
+  ];
 
   final PocketBase client;
 
@@ -22,19 +28,20 @@ class AuthController extends ValueNotifier<User?> {
 
   StreamSubscription<AuthStoreEvent>? _authEventStream;
 
+  final methods = ValueNotifier<AuthMethodsList?>(null);
+
   AuthController({
     required this.client,
-    required this.providers,
     required this.errorCallback,
     this.authCollectionIrOrName = 'users',
     User? initialUser,
   }) : super(initialUser) {
-    assert(providers.isNotEmpty, 'At least one auth provider required');
     for (final provider in providers) {
       provider.client = client;
       provider.authService = authService;
     }
     _authEventStream = client.authStore.onChange.listen((event) {
+      debugPrint('Auth event: $event');
       final m = event.model;
       if (m is RecordModel) {
         value = (m.id, m);
@@ -76,5 +83,15 @@ class AuthController extends ValueNotifier<User?> {
 
   Future<void> delete() async {
     // TODO
+  }
+
+  Future<void> loadProviders() async {
+    try {
+      final methods = await authService.listAuthMethods();
+      this.methods.value = methods;
+    } catch (e) {
+      debugPrint('Error loading auth providers: $e');
+      await errorCallback(e);
+    }
   }
 }

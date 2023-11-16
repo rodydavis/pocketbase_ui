@@ -1,4 +1,7 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:pocketbase/pocketbase.dart';
 
 import '../controller.dart';
 import 'email_verification.dart';
@@ -18,20 +21,20 @@ class SignInScreen extends StatefulWidget {
   final Widget? background;
   final VoidCallback onLoginSuccess;
 
+  static SignInScreenState of(BuildContext context) {
+    return context.findAncestorStateOfType<SignInScreenState>()!;
+  }
+
   @override
-  State<SignInScreen> createState() => _SignInScreenState();
+  State<SignInScreen> createState() => SignInScreenState();
 }
 
-class _SignInScreenState extends State<SignInScreen> {
-  var screen = _AuthScreen.login;
-
-  void setScreen(_AuthScreen value) {
-    if (mounted) {
-      setState(() {
-        screen = value;
-      });
-    }
-  }
+class SignInScreenState extends State<SignInScreen> {
+  var screen = AuthScreen.login;
+  late final AuthController controller = widget.controller;
+  bool healthy = true;
+  Timer? healthTimer;
+  String? error;
 
   @override
   void initState() {
@@ -45,40 +48,138 @@ class _SignInScreenState extends State<SignInScreen> {
     init();
   }
 
-  Future<void> init() async {
-    // TODO
+  @override
+  void dispose() {
+    healthTimer?.cancel();
+    super.dispose();
   }
+
+  Future<void> init() async {
+    checkHealth();
+    healthTimer = Timer.periodic(const Duration(seconds: 30), (_) {
+      checkHealth();
+    });
+    await controller.loadProviders();
+  }
+
+  void setHealthy(bool value) async {
+    final wasHealthy = healthy;
+    if (mounted) {
+      setState(() {
+        healthy = value;
+      });
+    }
+    if (!wasHealthy && value) {
+      await controller.loadProviders();
+    }
+  }
+
+  void setScreen(AuthScreen value) {
+    if (mounted) {
+      setState(() {
+        screen = value;
+      });
+    }
+  }
+
+  void setError(Object? error) {
+    if (mounted) {
+      setState(() {
+        if (error is ClientException) {
+          this.error = error.response['message'];
+        } else {
+          this.error = error?.toString();
+        }
+      });
+    }
+  }
+
+  Future<void> checkHealth() async {
+    try {
+      final result = await controller.client.health.check();
+      setHealthy(result.code == 200);
+    } catch (e) {
+      debugPrint('Error checking health: $e');
+      setHealthy(false);
+    }
+  }
+
+  void onLoginSuccess() => widget.onLoginSuccess();
 
   @override
   Widget build(BuildContext context) {
-    return _AuthBackgroundBuilder(
-      form: (switch (screen) {
-        _AuthScreen.login => LoginScreen(
-            key: const ValueKey('auth:login'),
-            controller: widget.controller,
-            showForgotPassword: () => setScreen(_AuthScreen.forgot),
-            showEmailVerify: () => setScreen(_AuthScreen.verify),
-            showRegister: () => setScreen(_AuthScreen.register),
-            onLoginSuccess: widget.onLoginSuccess,
+    final fonts = Theme.of(context).textTheme;
+    final colors = Theme.of(context).colorScheme;
+    if (!healthy) {
+      return const Scaffold(
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'Server is down. Please try again later.\n(trying again in 30 seconds)',
+                textAlign: TextAlign.center,
+              ),
+              SizedBox(height: 8),
+              CircularProgressIndicator(),
+            ],
           ),
-        _AuthScreen.forgot => ForgotPasswordScreen(
-            key: const ValueKey('auth:forgot'),
-            controller: widget.controller,
-            showLogin: () => setScreen(_AuthScreen.login),
-          ),
-        _AuthScreen.register => RegisterScreen(
-            key: const ValueKey('auth:register'),
-            controller: widget.controller,
-            showLogin: () => setScreen(_AuthScreen.login),
-            onLoginSuccess: widget.onLoginSuccess,
-          ),
-        _AuthScreen.verify => EmailVerificationScreen(
-            key: const ValueKey('auth:verify'),
-            controller: widget.controller,
-            showLogin: () => setScreen(_AuthScreen.login),
-          ),
-      }),
-      background: widget.background,
+        ),
+      );
+    }
+    return Scaffold(
+      body: _AuthBackgroundBuilder(
+        background: widget.background,
+        form: ValueListenableBuilder(
+          valueListenable: controller.methods,
+          builder: (context, methods, child) {
+            if (methods == null) {
+              if (error != null) {
+                return Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Tooltip(
+                      message: error,
+                      child: Text(
+                        'Error loading authentication providers',
+                        textAlign: TextAlign.center,
+                        style: fonts.bodyMedium?.copyWith(color: colors.error),
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    OutlinedButton.icon(
+                      onPressed: controller.loadProviders,
+                      label: const Text('Retry'),
+                      icon: const Icon(Icons.refresh),
+                    ),
+                  ],
+                );
+              } else {
+                return const Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      CircularProgressIndicator(),
+                      SizedBox(height: 8),
+                      Text('Loading authentication providers...'),
+                    ],
+                  ),
+                );
+              }
+            }
+            return (switch (screen) {
+              AuthScreen.login => LoginScreen(controller: controller),
+              AuthScreen.register => RegisterScreen(controller: controller),
+              AuthScreen.forgot => const ForgotPasswordScreen(),
+              AuthScreen.verify => const EmailVerificationScreen(),
+            });
+          },
+        ),
+      ),
     );
   }
 }
@@ -143,7 +244,7 @@ class _AuthBackgroundBuilder extends StatelessWidget {
   }
 }
 
-enum _AuthScreen {
+enum AuthScreen {
   login,
   register,
   forgot,

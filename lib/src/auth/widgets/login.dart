@@ -2,24 +2,17 @@ import 'package:flutter/material.dart';
 import 'package:pocketbase/pocketbase.dart';
 
 import '../../utils/open_url.dart';
+
 import '../controller.dart';
 import '../providers/base.dart';
 import '../providers/email.dart';
 import '../providers/oauth2.dart';
+import 'sign_in.dart';
 
 class LoginScreen extends StatefulWidget {
-  const LoginScreen({
-    Key? key,
-    required this.controller,
-    required this.showForgotPassword,
-    required this.showRegister,
-    required this.showEmailVerify,
-    required this.onLoginSuccess,
-  }) : super(key: key);
+  const LoginScreen({super.key, required this.controller});
 
   final AuthController controller;
-  final VoidCallback showForgotPassword, showRegister, showEmailVerify;
-  final VoidCallback onLoginSuccess;
 
   @override
   State<LoginScreen> createState() => _LoginScreenState();
@@ -30,50 +23,11 @@ class _LoginScreenState extends State<LoginScreen> {
   final username = TextEditingController();
   final password = TextEditingController();
   bool showPassword = false;
-  static AuthMethodsList? methods;
   String? error;
 
-  late final client = widget.controller.client;
-  late final authService = widget.controller.authService;
-  late final providers = widget.controller.providers;
-
-  @override
-  void initState() {
-    super.initState();
-    init();
-  }
-
-  @override
-  void reassemble() {
-    super.reassemble();
-    init();
-  }
-
-  @override
-  void didUpdateWidget(covariant LoginScreen oldWidget) {
-    if (oldWidget.controller != widget.controller) {
-      init();
-    }
-    super.didUpdateWidget(oldWidget);
-  }
-
-  Future<void> init() async {
-    await loadProviders();
-  }
-
-  Future<void> loadProviders() async {
-    try {
-      final methods = await authService.listAuthMethods();
-      if (mounted) {
-        setState(() {
-          _LoginScreenState.methods = methods;
-        });
-      }
-    } catch (e) {
-      debugPrint('Error loading auth providers: $e');
-      setError(e);
-    }
-  }
+  late final AuthController controller = widget.controller;
+  late final client = controller.client;
+  late final authService = controller.authService;
 
   void setError(Object? error) {
     if (mounted) {
@@ -89,6 +43,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
   Future<void> login(BuildContext context, AuthProvider provider) async {
     try {
+      final root = SignInScreen.of(context);
       setError(null);
       debugPrint('Logging in with ${provider.name}');
       if (provider is EmailAuthProvider) {
@@ -96,7 +51,7 @@ class _LoginScreenState extends State<LoginScreen> {
       } else if (provider is OAuth2AuthProvider) {
         await provider.authenticate(openUrl);
       }
-      if (provider.isLoggedIn) widget.onLoginSuccess();
+      if (provider.isLoggedIn) root.onLoginSuccess();
     } catch (e) {
       debugPrint('Error logging in with ${provider.name}: $e');
       setError(e);
@@ -108,38 +63,10 @@ class _LoginScreenState extends State<LoginScreen> {
     final fonts = Theme.of(context).textTheme;
     final colors = Theme.of(context).colorScheme;
     const gap = SizedBox(height: 20);
-    if (_LoginScreenState.methods == null) {
-      if (error != null) {
-        return Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Tooltip(
-              message: error,
-              child: Text(
-                'Error loading authentication providers',
-                textAlign: TextAlign.center,
-                style: fonts.bodyMedium?.copyWith(color: colors.error),
-              ),
-            ),
-            const SizedBox(height: 20),
-            OutlinedButton.icon(
-              onPressed: loadProviders,
-              label: const Text('Retry'),
-              icon: const Icon(Icons.refresh),
-            ),
-          ],
-        );
-      } else {
-        return const Center(
-          child: CircularProgressIndicator(),
-        );
-      }
-    }
+    final providers = AuthController.providers;
     final emailProvider = providers.whereType<EmailAuthProvider>().firstOrNull;
     final externalAuthProviders = providers.whereType<OAuth2AuthProvider>();
-    final methods = _LoginScreenState.methods!;
+    final methods = controller.methods.value!;
     return Form(
       key: formKey,
       child: Column(
@@ -182,6 +109,7 @@ class _LoginScreenState extends State<LoginScreen> {
             }),
             TextFormField(
               controller: password,
+              obscureText: !showPassword,
               decoration: InputDecoration(
                 labelText: 'Password',
                 suffixIcon: IconButton(
@@ -238,10 +166,14 @@ class _LoginScreenState extends State<LoginScreen> {
                       },
                       child: const Text('Login'),
                     ),
-                    TextButton(
-                      onPressed: widget.showForgotPassword,
-                      child: const Text('Forgot your password?'),
-                    ),
+                    Builder(builder: (context) {
+                      return TextButton(
+                        onPressed: () {
+                          SignInScreen.of(context).setScreen(AuthScreen.forgot);
+                        },
+                        child: const Text('Forgot your password?'),
+                      );
+                    }),
                   ],
                 ),
               ),
@@ -251,10 +183,14 @@ class _LoginScreenState extends State<LoginScreen> {
           Row(
             children: [
               Expanded(
-                child: OutlinedButton(
-                  onPressed: widget.showRegister,
-                  child: const Text('Create a new account'),
-                ),
+                child: Builder(builder: (context) {
+                  return OutlinedButton(
+                    onPressed: () {
+                      SignInScreen.of(context).setScreen(AuthScreen.register);
+                    },
+                    child: const Text('Create a new account'),
+                  );
+                }),
               ),
             ],
           ),

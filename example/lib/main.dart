@@ -39,15 +39,11 @@ class App extends StatefulWidget {
 
 class AppState extends State<App> {
   final themeMode = ValueNotifier(ThemeMode.light);
+  static const seedColor = Colors.deepPurple;
   late final PocketBase pb = widget.pb;
   late final SharedPreferences prefs = widget.prefs;
   late final _controller = AuthController(
     client: pb,
-    providers: [
-      EmailAuthProvider(),
-      AppleAuthProvider(),
-      GoogleAuthProvider(),
-    ],
     errorCallback: (error) {},
   )..addListener(() => setState(() {}));
 
@@ -92,7 +88,7 @@ class AppState extends State<App> {
         builder: (context, state) {
           return SignInScreen(
             controller: _controller,
-            background: const Placeholder(),
+            background: Container(color: seedColor),
             onLoginSuccess: () {},
           );
         },
@@ -113,15 +109,14 @@ class AppState extends State<App> {
 
   @override
   Widget build(BuildContext context) {
-    const color = Colors.deepPurple;
     return ValueListenableBuilder(
         valueListenable: themeMode,
         builder: (context, mode, child) {
           return MaterialApp.router(
             title: 'Flutter Demo',
             debugShowCheckedModeBanner: false,
-            theme: buildTheme(Brightness.light, color),
-            darkTheme: buildTheme(Brightness.dark, color),
+            theme: buildTheme(Brightness.light, seedColor),
+            darkTheme: buildTheme(Brightness.dark, seedColor),
             themeMode: mode,
             routerConfig: _router,
           );

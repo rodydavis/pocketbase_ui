@@ -1,22 +1,19 @@
 import 'package:flutter/material.dart';
 
-import '../controller.dart';
+import 'sign_in.dart';
 
 class EmailVerificationScreen extends StatelessWidget {
-  const EmailVerificationScreen({
-    super.key,
-    required this.controller,
-    required this.showLogin,
-  });
-
-  final AuthController controller;
-  final VoidCallback showLogin;
+  const EmailVerificationScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        leading: BackButton(onPressed: showLogin),
+        leading: Builder(builder: (context) {
+          return BackButton(onPressed: () {
+            SignInScreen.of(context).setScreen(AuthScreen.login);
+          });
+        }),
         title: const Text('Email Verify Screen'),
       ),
     );
