@@ -39,8 +39,10 @@ class App extends StatefulWidget {
 
 class AppState extends State<App> {
   final themeMode = ValueNotifier(ThemeMode.light);
+  late final PocketBase pb = widget.pb;
+  late final SharedPreferences prefs = widget.prefs;
   late final _controller = AuthController(
-    client: widget.pb,
+    client: pb,
     providers: [
       EmailAuthProvider(),
       AppleAuthProvider(),
