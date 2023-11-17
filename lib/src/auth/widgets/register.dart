@@ -23,6 +23,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final passwordConfirm = TextEditingController();
   String? error;
   bool publicEmail = true;
+  bool loading = false;
 
   late final AuthController controller = widget.controller;
   late final client = controller.client;
@@ -40,6 +41,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
     }
   }
 
+  void setLoading(bool loading) {
+    if (mounted) {
+      setState(() {
+        this.loading = loading;
+      });
+    }
+  }
+
   Future<void> register(
     BuildContext context,
     EmailAuthProvider provider,
@@ -47,6 +56,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     try {
       final root = SignInScreen.of(context);
       setError(null);
+      setLoading(true);
       debugPrint('Registering in with ${provider.name}');
       await provider.register(
         email.text,
@@ -60,6 +70,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       debugPrint('Error registering with ${provider.name}: $e');
       setError(e);
     }
+    setLoading(false);
   }
 
   @override
@@ -123,7 +134,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
               decoration: const InputDecoration(labelText: 'Username'),
               validator: (val) {
                 if (val == null) return 'Username required';
-                if (val.isEmpty) return 'Username cannot be empty';
+                if (val.isEmpty) {
+                  if (email.text.isNotEmpty && methods.emailPassword) {
+                    return null;
+                  }
+                  return 'Username cannot be empty';
+                }
                 return null;
               },
             ),
@@ -133,7 +149,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
               decoration: const InputDecoration(labelText: 'Email'),
               validator: (val) {
                 if (val == null) return 'Email required';
-                if (val.isEmpty) return 'Email cannot be empty';
+                if (val.isEmpty) {
+                  if (username.text.isNotEmpty && methods.usernamePassword) {
+                    return null;
+                  }
+                  return 'Email cannot be empty';
+                }
                 if (!val.contains('@')) return 'Invalid email address';
                 return null;
               },
@@ -195,13 +216,30 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   alignment: WrapAlignment.spaceBetween,
                   children: [
                     FilledButton(
-                      onPressed: () async {
-                        if (formKey.currentState!.validate()) {
-                          formKey.currentState!.save();
-                          await register(context, emailProvider);
-                        }
-                      },
-                      child: const Text('Register'),
+                      onPressed: loading
+                          ? null
+                          : () async {
+                              if (formKey.currentState!.validate()) {
+                                formKey.currentState!.save();
+                                await register(context, emailProvider);
+                              }
+                            },
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Text('Register'),
+                          if (loading) ...[
+                            const SizedBox(width: 8),
+                            const SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
                     ),
                   ],
                 ),

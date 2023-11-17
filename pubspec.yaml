@@ -12,9 +12,12 @@ dependencies:
     sdk: flutter
   flutter_custom_tabs: ^1.2.1
   http: ^1.1.0
+  infinite_scroll_pagination: ^4.0.0
   platform_info: ^4.0.2
   pocketbase: ^0.16.0
+  recase: ^4.1.0
   sqlite_async: ^0.5.2
+  timeago: ^3.6.0
   url_launcher: ^6.2.0
 
 dev_dependencies:

@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:pocketbase/pocketbase.dart';
 
 import '../controller.dart';
-import 'email_verification.dart';
+
 import 'forgot_password.dart';
 import 'login.dart';
 import 'register.dart';
@@ -175,7 +175,6 @@ class SignInScreenState extends State<SignInScreen> {
               AuthScreen.login => LoginScreen(controller: controller),
               AuthScreen.register => RegisterScreen(controller: controller),
               AuthScreen.forgot => const ForgotPasswordScreen(),
-              AuthScreen.verify => const EmailVerificationScreen(),
             });
           },
         ),
@@ -248,5 +247,4 @@ enum AuthScreen {
   login,
   register,
   forgot,
-  verify,
 }

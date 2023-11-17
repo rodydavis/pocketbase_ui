@@ -24,6 +24,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final password = TextEditingController();
   bool showPassword = false;
   String? error;
+  bool loading = false;
 
   late final AuthController controller = widget.controller;
   late final client = controller.client;
@@ -41,9 +42,18 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
+  void setLoading(bool loading) {
+    if (mounted) {
+      setState(() {
+        this.loading = loading;
+      });
+    }
+  }
+
   Future<void> login(BuildContext context, AuthProvider provider) async {
     try {
       final root = SignInScreen.of(context);
+      setLoading(true);
       setError(null);
       debugPrint('Logging in with ${provider.name}');
       if (provider is EmailAuthProvider) {
@@ -56,6 +66,7 @@ class _LoginScreenState extends State<LoginScreen> {
       debugPrint('Error logging in with ${provider.name}: $e');
       setError(e);
     }
+    setLoading(false);
   }
 
   @override
@@ -157,14 +168,31 @@ class _LoginScreenState extends State<LoginScreen> {
                   alignment: WrapAlignment.spaceBetween,
                   children: [
                     FilledButton(
-                      onPressed: () async {
-                        if (emailProvider == null) return;
-                        if (formKey.currentState!.validate()) {
-                          formKey.currentState!.save();
-                          await login(context, emailProvider);
-                        }
-                      },
-                      child: const Text('Login'),
+                      onPressed: loading
+                          ? null
+                          : () async {
+                              if (emailProvider == null) return;
+                              if (formKey.currentState!.validate()) {
+                                formKey.currentState!.save();
+                                await login(context, emailProvider);
+                              }
+                            },
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Text('Login'),
+                          if (loading) ...[
+                            const SizedBox(width: 8),
+                            const SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
                     ),
                     Builder(builder: (context) {
                       return TextButton(
@@ -196,17 +224,12 @@ class _LoginScreenState extends State<LoginScreen> {
           ),
           gap,
           for (final provider in externalAuthProviders) ...[
-            Row(
-              children: [
-                Expanded(
-                  child: FilledButton.tonal(
-                    onPressed: () => login(context, provider),
-                    child: Text('Sign in with ${provider.label}'),
-                  ),
-                ),
-              ],
+            ListTile(
+              title: FilledButton.tonal(
+                onPressed: () => login(context, provider),
+                child: Text('Sign in with ${provider.label}'),
+              ),
             ),
-            gap,
           ],
         ],
       ),
