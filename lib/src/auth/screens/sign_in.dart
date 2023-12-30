@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:pocketbase/pocketbase.dart';
@@ -44,9 +43,9 @@ class SignInScreen extends StatefulWidget {
 
 class SignInScreenState extends State<SignInScreen> {
   late final AuthController controller = widget.controller;
+  final _currentError = signal<String?>(null);
   bool healthy = true;
   Timer? healthTimer;
-  String? error;
 
   @override
   void initState() {
@@ -83,18 +82,21 @@ class SignInScreenState extends State<SignInScreen> {
     }
     if (!wasHealthy && value) {
       await controller.loadProviders();
+      if (controller.isSignedIn) {
+        try {
+          await controller.authService.authRefresh();
+        } catch (e) {
+          debugPrint('error refresh auth: $e');
+        }
+      }
     }
   }
 
   void setError(Object? error) {
-    if (mounted) {
-      setState(() {
-        if (error is ClientException) {
-          this.error = error.response['message'];
-        } else {
-          this.error = error?.toString();
-        }
-      });
+    if (error is ClientException) {
+      _currentError.value = error.originalError.toString();
+    } else {
+      _currentError.value = error?.toString();
     }
   }
 
@@ -139,14 +141,15 @@ class SignInScreenState extends State<SignInScreen> {
           valueListenable: controller.methods,
           builder: (context, methods, child) {
             if (methods == null) {
-              if (error != null) {
+              final err = _currentError.watch(context);
+              if (err != null) {
                 return Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   crossAxisAlignment: CrossAxisAlignment.center,
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Tooltip(
-                      message: error,
+                      message: err,
                       child: Text(
                         'Error loading authentication providers',
                         textAlign: TextAlign.center,

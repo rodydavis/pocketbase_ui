@@ -15,7 +15,7 @@ class ProfileScreen extends StatefulWidget {
 class _ProfileScreenState extends State<ProfileScreen> {
   bool edited = false;
   bool loading = false;
-  String? error;
+  final _currentError = signal<String?>(null);
   final _formKey = GlobalKey<FormState>();
   final displayName = TextEditingController();
   final username = TextEditingController();
@@ -41,10 +41,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
     if (mounted) {
       setState(() {
         if (error is ClientException) {
-          final msg = jsonEncode(error.response);
-          this.error = msg.isEmpty ? error.originalError.toString() : msg;
+          _currentError.value = error.originalError.toString();
         } else {
-          this.error = error?.toString();
+          _currentError.value = error?.toString();
         }
       });
     }
@@ -60,7 +59,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   void onAuthEvent() async {
     isAdmin = false;
-    error = null;
+    _currentError.value = null;
     if (widget.controller.value == null) {
       if (mounted) {
         setState(() {
@@ -182,6 +181,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Widget build(BuildContext context) {
     final providers = AuthController.providers;
     final externalAuthProviders = providers.whereType<OAuth2AuthProvider>();
+    final error = _currentError.watch(context);
     return ValueListenableBuilder(
       valueListenable: widget.controller,
       builder: (context, event, child) {
@@ -233,7 +233,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                     onPressed: () => Navigator.of(context).push(
                                       MaterialPageRoute(
                                           builder: (context) =>
-                                              const VerifyEmailScreen()),
+                                              VerifyEmailScreen(
+                                                controller: widget.controller,
+                                              )),
                                     ),
                                     child: const Text('Verify'),
                                   ),
@@ -249,7 +251,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                     onPressed: () => Navigator.of(context).push(
                                       MaterialPageRoute(
                                           builder: (context) =>
-                                              const ChangeEmailScreen()),
+                                              ChangeEmailScreen(
+                                                controller: widget.controller,
+                                              )),
                                     ),
                                   ),
                                 ),
@@ -291,17 +295,36 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                   },
                                 ),
                               ),
-                              ListTile(
-                                title: OutlinedButton.icon(
-                                  label: const Text('Change Password'),
-                                  icon: const Icon(Icons.edit),
-                                  onPressed: () => Navigator.of(context).push(
-                                    MaterialPageRoute(
+                              if (_user != null) ...[
+                                ListTile(
+                                  title: OutlinedButton.icon(
+                                    label: const Text('Change Password'),
+                                    icon: const Icon(Icons.edit),
+                                    onPressed: () => Navigator.of(context).push(
+                                      MaterialPageRoute(
                                         builder: (context) =>
-                                            const ChangePasswordScreen()),
+                                            ChangePasswordScreen(
+                                          controller: widget.controller,
+                                          model: _user!,
+                                        ),
+                                      ),
+                                    ),
                                   ),
                                 ),
-                              ),
+                                ListTile(
+                                  title: OutlinedButton.icon(
+                                    label: const Text('Change Email'),
+                                    icon: const Icon(Icons.edit),
+                                    onPressed: () => Navigator.of(context).push(
+                                      MaterialPageRoute(
+                                        builder: (context) => ChangeEmailScreen(
+                                          controller: widget.controller,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
                               if (edited)
                                 ListTile(
                                   title: FilledButton.tonal(
@@ -375,10 +398,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           ],
                         ),
                       ),
-                      if (error != null && error!.isNotEmpty) ...[
+                      if (error != null && error.isNotEmpty) ...[
                         ListTile(
                           title: Text(
-                            error!,
+                            error,
                             textAlign: TextAlign.center,
                             style: Theme.of(context)
                                 .textTheme

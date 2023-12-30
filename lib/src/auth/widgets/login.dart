@@ -14,7 +14,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final username = TextEditingController();
   final password = TextEditingController();
   bool showPassword = false;
-  String? error;
+  final _currentError = signal<String?>(null);
   bool loading = false;
 
   late final AuthController controller = widget.controller;
@@ -25,9 +25,9 @@ class _LoginScreenState extends State<LoginScreen> {
     if (mounted) {
       setState(() {
         if (error is ClientException) {
-          this.error = error.response['message'];
+          _currentError.value = error.originalError.toString();
         } else {
-          this.error = error?.toString();
+          _currentError.value = error?.toString();
         }
       });
     }
@@ -69,6 +69,7 @@ class _LoginScreenState extends State<LoginScreen> {
     final emailProvider = providers.whereType<EmailAuthProvider>().firstOrNull;
     final externalAuthProviders = providers.whereType<OAuth2AuthProvider>();
     final methods = controller.methods.value!;
+    final error = _currentError.watch(context);
     return Form(
       key: formKey,
       child: Column(
@@ -142,7 +143,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   child: Padding(
                     padding: const EdgeInsets.all(8),
                     child: Text(
-                      error!,
+                      error,
                       textAlign: TextAlign.center,
                       style: fonts.bodyMedium?.copyWith(color: colors.error),
                     ),
@@ -189,8 +190,9 @@ class _LoginScreenState extends State<LoginScreen> {
                       return TextButton(
                         onPressed: () {
                           Navigator.of(context).push(MaterialPageRoute(
-                            builder: (context) => const ForgotPasswordScreen(),
-                            fullscreenDialog: true,
+                            builder: (context) => ForgotPasswordScreen(
+                              controller: widget.controller,
+                            ),
                           ));
                         },
                         child: const Text('Forgot your password?'),

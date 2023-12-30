@@ -83,7 +83,13 @@ class AuthController extends ValueNotifier<User?> {
   Future<void> logout() => execute(() async => client.authStore.clear());
 
   Future<void> delete() async {
-    // TODO
+    final model = client.authStore.model;
+    if (model is AdminModel) {
+      // Cannot delete admin model
+    } else if (model is RecordModel) {
+      await authService.delete(model.id);
+      await logout();
+    }
   }
 
   Future<void> loadProviders() async {

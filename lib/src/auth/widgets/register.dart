@@ -16,7 +16,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final displayName = TextEditingController();
   final password = TextEditingController();
   final passwordConfirm = TextEditingController();
-  String? error;
+  final _currentError = signal<String?>(null);
   bool publicEmail = true;
   bool loading = false;
 
@@ -28,9 +28,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
     if (mounted) {
       setState(() {
         if (error is ClientException) {
-          this.error = error.response['message'];
+          _currentError.value = error.originalError.toString();
         } else {
-          this.error = error?.toString();
+          _currentError.value = error?.toString();
         }
       });
     }
@@ -75,6 +75,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     const gap = SizedBox(height: 20);
     final providers = AuthController.providers;
     final emailProvider = providers.whereType<EmailAuthProvider>().firstOrNull;
+    final error = _currentError.watch(context);
     if (emailProvider == null) {
       return Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -194,7 +195,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   child: Padding(
                     padding: const EdgeInsets.all(8),
                     child: Text(
-                      error!,
+                      error,
                       textAlign: TextAlign.center,
                       style: fonts.bodyMedium?.copyWith(color: colors.error),
                     ),
