@@ -55,7 +55,11 @@ class SignInScreenState extends State<SignInScreen> {
 
   void setError(Object? error) {
     if (error is ClientException) {
-      _currentError.value = error.originalError.toString();
+      if (error.response.containsKey('message')) {
+        _currentError.value = error.response['message'].toString();
+      } else {
+        _currentError.value = error.originalError.toString();
+      }
     } else {
       _currentError.value = error?.toString();
     }
