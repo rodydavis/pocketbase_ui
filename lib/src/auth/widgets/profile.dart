@@ -41,7 +41,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
     if (mounted) {
       setState(() {
         if (error is ClientException) {
-          _currentError.value = error.originalError.toString();
+          if (error.response.containsKey('message')) {
+            _currentError.value = error.response['message'].toString();
+          } else {
+            _currentError.value = error.originalError.toString();
+          }
         } else {
           _currentError.value = error?.toString();
         }
