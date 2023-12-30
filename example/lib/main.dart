@@ -8,14 +8,13 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   final prefs = await SharedPreferences.getInstance();
   const authKey = 'pb_auth';
-  final store = AsyncAuthStore(
-    save: (data) async => prefs.setString(authKey, data),
-    initial: prefs.getString(authKey),
-    clear: () => prefs.remove(authKey),
-  );
   final pb = PocketBase(
     'https://pocketbase.io',
-    authStore: store,
+    authStore: AsyncAuthStore(
+      save: (data) async => prefs.setString(authKey, data),
+      initial: prefs.getString(authKey),
+      clear: () => prefs.remove(authKey),
+    ),
   );
   runApp(App(prefs: prefs, pb: pb));
 }
