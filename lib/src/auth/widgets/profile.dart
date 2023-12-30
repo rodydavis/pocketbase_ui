@@ -295,6 +295,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                   },
                                 ),
                               ),
+                              if (edited)
+                                ListTile(
+                                  title: FilledButton.tonal(
+                                    child: const Text('Save Info'),
+                                    onPressed: () => save(context),
+                                  ),
+                                ),
                               if (_user != null) ...[
                                 ListTile(
                                   title: OutlinedButton.icon(
@@ -325,13 +332,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                   ),
                                 ),
                               ],
-                              if (edited)
-                                ListTile(
-                                  title: FilledButton.tonal(
-                                    child: const Text('Save Info'),
-                                    onPressed: () => save(context),
-                                  ),
-                                ),
                             ],
                           ),
                         ),

@@ -11,6 +11,7 @@ void main() async {
   final store = AsyncAuthStore(
     save: (data) async => prefs.setString(authKey, data),
     initial: prefs.getString(authKey),
+    clear: () => prefs.remove(authKey),
   );
   final pb = PocketBase(
     'https://pocketbase.io',
