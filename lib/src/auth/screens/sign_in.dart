@@ -1,13 +1,26 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:pocketbase/pocketbase.dart';
+import 'package:signals/signals_flutter.dart';
+import 'package:timeago/timeago.dart' as timeago;
 
+import '../../utils/open_url.dart';
 import '../controller.dart';
-
+import '../providers/base.dart';
+import '../providers/email.dart';
+import '../providers/oauth2.dart';
+import 'change_email.dart';
+import 'change_password.dart';
 import 'forgot_password.dart';
-import 'login.dart';
-import 'register.dart';
+import 'verify_email.dart';
+
+part '../widgets/login.dart';
+part '../widgets/register.dart';
+part '../widgets/profile.dart';
+
+final _currentScreen = signal(AuthScreen.login);
 
 class SignInScreen extends StatefulWidget {
   const SignInScreen({
@@ -30,7 +43,6 @@ class SignInScreen extends StatefulWidget {
 }
 
 class SignInScreenState extends State<SignInScreen> {
-  var screen = AuthScreen.login;
   late final AuthController controller = widget.controller;
   bool healthy = true;
   Timer? healthTimer;
@@ -71,14 +83,6 @@ class SignInScreenState extends State<SignInScreen> {
     }
     if (!wasHealthy && value) {
       await controller.loadProviders();
-    }
-  }
-
-  void setScreen(AuthScreen value) {
-    if (mounted) {
-      setState(() {
-        screen = value;
-      });
     }
   }
 
@@ -171,10 +175,9 @@ class SignInScreenState extends State<SignInScreen> {
                 );
               }
             }
-            return (switch (screen) {
+            return (switch (_currentScreen.watch(context)) {
               AuthScreen.login => LoginScreen(controller: controller),
               AuthScreen.register => RegisterScreen(controller: controller),
-              AuthScreen.forgot => const ForgotPasswordScreen(),
             });
           },
         ),
@@ -246,5 +249,4 @@ class _AuthBackgroundBuilder extends StatelessWidget {
 enum AuthScreen {
   login,
   register,
-  forgot,
 }

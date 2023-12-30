@@ -1,13 +1,4 @@
-import 'package:flutter/material.dart';
-import 'package:pocketbase/pocketbase.dart';
-import 'package:timeago/timeago.dart' as timeago;
-
-import '../../utils/open_url.dart';
-import '../controller.dart';
-import '../providers/oauth2.dart';
-import 'change_email.dart';
-import 'change_password.dart';
-import 'verify_email.dart';
+part of '../screens/sign_in.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({
@@ -36,6 +27,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   List<ExternalAuthModel> externalMethods = [];
   bool isAdmin = false;
   OAuth2AuthProvider? loadingProvider;
+  RecordModel? _user;
 
   void setLoading(bool loading) {
     if (mounted) {
@@ -49,7 +41,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
     if (mounted) {
       setState(() {
         if (error is ClientException) {
-          this.error = error.originalError.toString();
+          final msg = jsonEncode(error.response);
+          this.error = msg.isEmpty ? error.originalError.toString() : msg;
         } else {
           this.error = error?.toString();
         }
@@ -76,6 +69,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       }
       return;
     }
+    setLoading(true);
     final (_, user) = widget.controller.value!;
     if (user is AdminModel) {
       if (mounted) {
@@ -84,6 +78,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         });
       }
     } else if (user is RecordModel) {
+      _user = user;
       externalMethods = await widget //
           .controller
           .authService
@@ -158,7 +153,30 @@ class _ProfileScreenState extends State<ProfileScreen> {
     super.dispose();
   }
 
-  Future<void> save(BuildContext context) async {}
+  Future<void> save(BuildContext context) async {
+    if (!userFound || _user == null) return;
+    if (!edited) return;
+    if (_formKey.currentState!.validate()) {
+      _formKey.currentState!.save();
+      setError(null);
+      setLoading(true);
+      try {
+        await widget.controller.authService.update(_user!.id, body: {
+          if (username.text != _user!.getStringValue('username')) ...{
+            'username': username.text.trim(),
+          },
+          if (displayName.text != _user!.getStringValue('name')) ...{
+            'name': displayName.text.trim(),
+          },
+        });
+        setEdited(false);
+      } catch (e) {
+        debugPrint('Error save info: $e');
+        setError(e);
+      }
+      setLoading(false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -284,6 +302,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                   ),
                                 ),
                               ),
+                              if (edited)
+                                ListTile(
+                                  title: FilledButton.tonal(
+                                    child: const Text('Save Info'),
+                                    onPressed: () => save(context),
+                                  ),
+                                ),
                             ],
                           ),
                         ),

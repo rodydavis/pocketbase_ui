@@ -1,13 +1,4 @@
-import 'package:flutter/material.dart';
-import 'package:pocketbase/pocketbase.dart';
-
-import '../../utils/open_url.dart';
-
-import '../controller.dart';
-import '../providers/base.dart';
-import '../providers/email.dart';
-import '../providers/oauth2.dart';
-import 'sign_in.dart';
+part of '../screens/sign_in.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key, required this.controller});
@@ -197,7 +188,10 @@ class _LoginScreenState extends State<LoginScreen> {
                     Builder(builder: (context) {
                       return TextButton(
                         onPressed: () {
-                          SignInScreen.of(context).setScreen(AuthScreen.forgot);
+                          Navigator.of(context).push(MaterialPageRoute(
+                            builder: (context) => const ForgotPasswordScreen(),
+                            fullscreenDialog: true,
+                          ));
                         },
                         child: const Text('Forgot your password?'),
                       );
@@ -214,7 +208,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 child: Builder(builder: (context) {
                   return OutlinedButton(
                     onPressed: () {
-                      SignInScreen.of(context).setScreen(AuthScreen.register);
+                      _currentScreen.set(AuthScreen.register);
                     },
                     child: const Text('Create a new account'),
                   );
@@ -225,6 +219,7 @@ class _LoginScreenState extends State<LoginScreen> {
           gap,
           for (final provider in externalAuthProviders) ...[
             ListTile(
+              contentPadding: EdgeInsets.zero,
               title: FilledButton.tonal(
                 onPressed: () => login(context, provider),
                 child: Text('Sign in with ${provider.label}'),

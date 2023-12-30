@@ -16,6 +16,7 @@ dependencies:
   platform_info: ^4.0.2
   pocketbase: ^0.16.0
   recase: ^4.1.0
+  signals: ^2.1.10
   sqlite_async: ^0.5.2
   timeago: ^3.6.0
   url_launcher: ^6.2.0

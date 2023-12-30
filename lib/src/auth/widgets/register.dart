@@ -1,9 +1,4 @@
-import 'package:flutter/material.dart';
-import 'package:pocketbase/pocketbase.dart';
-
-import '../controller.dart';
-import '../providers/email.dart';
-import 'sign_in.dart';
+part of '../screens/sign_in.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key, required this.controller});
@@ -253,7 +248,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 child: Builder(builder: (context) {
                   return OutlinedButton(
                     onPressed: () {
-                      SignInScreen.of(context).setScreen(AuthScreen.login);
+                      _currentScreen.set(AuthScreen.login);
                     },
                     child: const Text('Already have an account?'),
                   );

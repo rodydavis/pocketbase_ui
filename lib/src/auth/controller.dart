@@ -63,7 +63,8 @@ class AuthController extends ValueNotifier<User?> {
 
   late final authService = client.collection(authCollectionIrOrName);
 
-  bool get isSignedIn => client.authStore.isValid;
+  bool get isSignedIn =>
+      client.authStore.isValid && client.authStore.token.isNotEmpty;
 
   Future<void> execute(final Future<void> Function() callback) async {
     try {
