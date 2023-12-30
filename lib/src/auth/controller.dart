@@ -48,6 +48,7 @@ class AuthController extends ValueNotifier<User?> {
       debugPrint('Auth event: $event');
       setAuth(event.token, event.model);
     });
+    setAuth(client.authStore.token, client.authStore.model);
     checkHealth();
     healthTimer = Timer.periodic(const Duration(seconds: 30), (_) {
       checkHealth();
@@ -55,6 +56,7 @@ class AuthController extends ValueNotifier<User?> {
   }
 
   void setAuth(String token, dynamic model) {
+    debugPrint('set auth: $token $model');
     if (model is RecordModel) {
       value = (model.id, model);
     } else if (model is AdminModel) {
