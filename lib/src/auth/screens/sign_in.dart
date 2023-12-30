@@ -48,48 +48,9 @@ class SignInScreenState extends State<SignInScreen> {
   Timer? healthTimer;
 
   @override
-  void initState() {
-    super.initState();
-    init();
-  }
-
-  @override
-  void reassemble() {
-    super.reassemble();
-    init();
-  }
-
-  @override
   void dispose() {
     healthTimer?.cancel();
     super.dispose();
-  }
-
-  Future<void> init() async {
-    checkHealth();
-    healthTimer = Timer.periodic(const Duration(seconds: 30), (_) {
-      checkHealth();
-    });
-    await controller.loadProviders();
-  }
-
-  void setHealthy(bool value) async {
-    final wasHealthy = healthy;
-    if (mounted) {
-      setState(() {
-        healthy = value;
-      });
-    }
-    if (!wasHealthy && value) {
-      await controller.loadProviders();
-      if (controller.isSignedIn) {
-        try {
-          await controller.authService.authRefresh();
-        } catch (e) {
-          debugPrint('error refresh auth: $e');
-        }
-      }
-    }
   }
 
   void setError(Object? error) {
@@ -97,16 +58,6 @@ class SignInScreenState extends State<SignInScreen> {
       _currentError.value = error.originalError.toString();
     } else {
       _currentError.value = error?.toString();
-    }
-  }
-
-  Future<void> checkHealth() async {
-    try {
-      final result = await controller.client.health.check();
-      setHealthy(result.code == 200);
-    } catch (e) {
-      debugPrint('Error checking health: $e');
-      setHealthy(false);
     }
   }
 

@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:pocketbase/pocketbase.dart';
+import 'package:signals/signals.dart';
 
 import 'providers/base.dart';
 import 'providers/email.dart';
@@ -30,6 +31,9 @@ class AuthController extends ValueNotifier<User?> {
 
   final methods = ValueNotifier<AuthMethodsList?>(null);
 
+  final healthy = signal(false);
+  Timer? healthTimer;
+
   AuthController({
     required this.client,
     required this.errorCallback,
@@ -52,11 +56,41 @@ class AuthController extends ValueNotifier<User?> {
       }
       notifyListeners();
     });
-    refresh(); // Maybe call this on first event fired
+    checkHealth();
+    healthTimer = Timer.periodic(const Duration(seconds: 30), (_) {
+      checkHealth();
+    });
+  }
+
+  void setHealthy(bool value) async {
+    final wasHealthy = healthy.previousValue;
+    healthy.value = value;
+    if (!wasHealthy && value) {
+      await loadProviders();
+      if (isSignedIn) {
+        try {
+          await authService.authRefresh();
+        } catch (e) {
+          this.value = null;
+          debugPrint('error refresh auth: $e');
+        }
+      }
+    }
+  }
+
+  Future<void> checkHealth() async {
+    try {
+      final result = await client.health.check();
+      setHealthy(result.code == 200);
+    } catch (e) {
+      debugPrint('Error checking health: $e');
+      setHealthy(false);
+    }
   }
 
   @override
   void dispose() {
+    healthTimer?.cancel();
     _authEventStream?.cancel();
     super.dispose();
   }
