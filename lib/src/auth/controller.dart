@@ -46,20 +46,23 @@ class AuthController extends ValueNotifier<User?> {
     }
     _authEventStream = client.authStore.onChange.listen((event) {
       debugPrint('Auth event: $event');
-      final m = event.model;
-      if (m is RecordModel) {
-        value = (m.id, m);
-      } else if (m is AdminModel) {
-        value = (m.id, m);
-      } else {
-        value = null;
-      }
-      notifyListeners();
+      setAuth(event.token, event.model);
     });
     checkHealth();
     healthTimer = Timer.periodic(const Duration(seconds: 30), (_) {
       checkHealth();
     });
+  }
+
+  void setAuth(String token, dynamic model) {
+    if (model is RecordModel) {
+      value = (model.id, model);
+    } else if (model is AdminModel) {
+      value = (model.id, model);
+    } else {
+      value = null;
+    }
+    notifyListeners();
   }
 
   void setHealthy(bool value) async {
@@ -98,7 +101,9 @@ class AuthController extends ValueNotifier<User?> {
   late final authService = client.collection(authCollectionIrOrName);
 
   bool get isSignedIn =>
-      client.authStore.isValid && client.authStore.token.isNotEmpty;
+      client.authStore.isValid &&
+      client.authStore.token.trim().isNotEmpty &&
+      value != null;
 
   Future<void> execute(final Future<void> Function() callback) async {
     try {
