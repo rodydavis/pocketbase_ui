@@ -12,7 +12,7 @@ dependencies:
   flutter_custom_tabs: ^1.2.1
   platform_info: ^4.0.2
   pocketbase: ">=0.15.0 <1.0.0"
-  signals: ^2.1.10
+  signals: ">=2.0.0 <3.0.0"
   timeago: ^3.6.0
   url_launcher: ^6.2.0
 
