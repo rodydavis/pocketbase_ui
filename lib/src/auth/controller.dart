@@ -68,7 +68,7 @@ class AuthController extends ValueNotifier<User?> {
   }
 
   void setHealthy(bool value) async {
-    final wasHealthy = healthy.previousValue;
+    final wasHealthy = healthy.value;
     healthy.value = value;
     if (!wasHealthy && value) {
       await loadProviders();
@@ -116,12 +116,11 @@ class AuthController extends ValueNotifier<User?> {
     notifyListeners();
   }
 
-  Future<void> refresh() async {
-    if (!isSignedIn) return;
-    return execute(() => authService.authRefresh());
+  Future<void> logout() async {
+    client.authStore.clear();
+    value = null;
+    notifyListeners();
   }
-
-  Future<void> logout() => execute(() async => client.authStore.clear());
 
   Future<void> delete() async {
     final model = client.authStore.model;
