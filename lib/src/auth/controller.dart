@@ -107,6 +107,17 @@ class AuthController extends ValueNotifier<User?> {
       client.authStore.token.trim().isNotEmpty &&
       value != null;
 
+  String get userId {
+    if (value == null) return '';
+    final (_, model) = value!;
+    if (model is RecordModel) {
+      return model.id;
+    } else if (model is AdminModel) {
+      return model.id;
+    }
+    return '';
+  }
+
   Future<void> execute(final Future<void> Function() callback) async {
     try {
       await callback();
