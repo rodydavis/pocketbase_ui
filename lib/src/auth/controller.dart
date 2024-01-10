@@ -14,7 +14,7 @@ typedef AuthErrorCallback = FutureOr<void> Function(Object);
 typedef User = (String, dynamic);
 
 /// Auth controller to manage auth lifecycle
-class AuthController extends ValueNotifier<User?> {
+class AuthController extends ValueSignal<User?> {
   static List<AuthProvider> providers = [
     EmailAuthProvider(),
     AppleAuthProvider(),
@@ -44,7 +44,7 @@ class AuthController extends ValueNotifier<User?> {
       provider.client = client;
       provider.authService = authService;
     }
-    _authEventStream = client.authStore.onChange.listen((event) {
+    _authEventStream = client.authStore.onChange.distinct().listen((event) {
       debugPrint('Auth event: $event');
       setAuth(event.token, event.model);
     });
@@ -64,7 +64,6 @@ class AuthController extends ValueNotifier<User?> {
     } else {
       value = null;
     }
-    notifyListeners();
   }
 
   void setHealthy(bool value) async {
@@ -118,19 +117,9 @@ class AuthController extends ValueNotifier<User?> {
     return '';
   }
 
-  Future<void> execute(final Future<void> Function() callback) async {
-    try {
-      await callback();
-    } catch (e) {
-      await errorCallback(e);
-    }
-    notifyListeners();
-  }
-
   Future<void> logout() async {
     client.authStore.clear();
     value = null;
-    notifyListeners();
   }
 
   Future<void> delete() async {

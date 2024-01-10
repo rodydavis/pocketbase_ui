@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:pocketbase/pocketbase.dart';
 import 'package:pocketbase_ui/pocketbase_ui.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:signals/signals_flutter.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -45,11 +46,11 @@ class AppState extends State<App> {
   late final _controller = AuthController(
     client: pb,
     errorCallback: (error) {},
-  )..addListener(() => setState(() {}));
+  );
 
   late final _router = GoRouter(
     initialLocation: '/',
-    refreshListenable: _controller,
+    refreshListenable: _controller.toValueListenable(),
     redirect: (context, state) {
       if (!_controller.isSignedIn) return '/sign-in';
       return null;

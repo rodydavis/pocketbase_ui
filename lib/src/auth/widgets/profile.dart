@@ -141,18 +141,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
     setLoading(false);
   }
 
+  EffectCleanup? _cleanup;
+
   @override
   void initState() {
     super.initState();
-    widget.controller.addListener(onAuthEvent);
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    _cleanup = effect(() {
+      widget.controller.value;
       onAuthEvent();
     });
   }
 
   @override
   void dispose() {
-    widget.controller.removeListener(onAuthEvent);
+    _cleanup?.call();
     super.dispose();
   }
 
@@ -186,243 +188,231 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final providers = AuthController.providers;
     final externalAuthProviders = providers.whereType<OAuth2AuthProvider>();
     final error = _currentError.watch(context);
-    return ValueListenableBuilder(
-      valueListenable: widget.controller,
-      builder: (context, event, child) {
-        return Scaffold(
-          appBar: AppBar(
-            title: const Text('Profile Screen'),
-            actions: [
-              TextButton(
-                onPressed: () => widget.controller.logout(),
-                child: const Text('Logout'),
-              ),
-            ],
+    widget.controller.watch(context);
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Profile Screen'),
+        actions: [
+          TextButton(
+            onPressed: () => widget.controller.logout(),
+            child: const Text('Logout'),
           ),
-          body: Builder(builder: (context) {
-            // TODO: Delete / logout
-            if (!userFound && loading) {
-              return const Center(child: CircularProgressIndicator());
-            }
-            if (!userFound && !loading) {
-              return const Center(child: Text('User not found'));
-            }
-            if (isAdmin) {
-              return const Center(child: Text('Admin user'));
-            }
-            return SingleChildScrollView(
-              child: Center(
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 400),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Card(
-                        child: Form(
-                          key: _formKey,
-                          onChanged: () => setEdited(true),
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              if (!verified)
-                                ListTile(
-                                  title: const Text('Email Not Verified'),
-                                  subtitle:
-                                      const Text('Please verify your email'),
-                                  leading: Icon(
-                                    Icons.warning,
-                                    color: Theme.of(context).colorScheme.error,
-                                  ),
-                                  trailing: OutlinedButton(
-                                    onPressed: () => Navigator.of(context).push(
-                                      MaterialPageRoute(
-                                          builder: (context) =>
-                                              VerifyEmailScreen(
-                                                controller: widget.controller,
-                                              )),
-                                    ),
-                                    child: const Text('Verify'),
-                                  ),
+        ],
+      ),
+      body: Builder(builder: (context) {
+        // TODO: Delete / logout
+        if (!userFound && loading) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        if (!userFound && !loading) {
+          return const Center(child: Text('User not found'));
+        }
+        if (isAdmin) {
+          return const Center(child: Text('Admin user'));
+        }
+        return SingleChildScrollView(
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 400),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Card(
+                    child: Form(
+                      key: _formKey,
+                      onChanged: () => setEdited(true),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          if (!verified)
+                            ListTile(
+                              title: const Text('Email Not Verified'),
+                              subtitle: const Text('Please verify your email'),
+                              leading: Icon(
+                                Icons.warning,
+                                color: Theme.of(context).colorScheme.error,
+                              ),
+                              trailing: OutlinedButton(
+                                onPressed: () => Navigator.of(context).push(
+                                  MaterialPageRoute(
+                                      builder: (context) => VerifyEmailScreen(
+                                            controller: widget.controller,
+                                          )),
                                 ),
-                              if (emailVisibility && email.isNotEmpty)
-                                ListTile(
-                                  title: const Text('Email'),
-                                  subtitle: Text(email),
-                                  leading: const Icon(Icons.email),
-                                  trailing: IconButton(
-                                    tooltip: 'Request email change',
-                                    icon: const Icon(Icons.edit),
-                                    onPressed: () => Navigator.of(context).push(
-                                      MaterialPageRoute(
-                                          builder: (context) =>
-                                              ChangeEmailScreen(
-                                                controller: widget.controller,
-                                              )),
-                                    ),
-                                  ),
-                                ),
-                              ListTile(
-                                title: TextFormField(
-                                  decoration: const InputDecoration(
-                                    labelText: 'Username',
-                                    prefixIcon: Icon(Icons.person_outlined),
-                                    border: OutlineInputBorder(),
-                                  ),
-                                  controller: username,
-                                  validator: (val) {
-                                    if (val == null) {
-                                      return 'Username required';
-                                    }
-                                    if (val.isEmpty) {
-                                      return 'Username cannot be empty';
-                                    }
-                                    return null;
-                                  },
+                                child: const Text('Verify'),
+                              ),
+                            ),
+                          if (emailVisibility && email.isNotEmpty)
+                            ListTile(
+                              title: const Text('Email'),
+                              subtitle: Text(email),
+                              leading: const Icon(Icons.email),
+                              trailing: IconButton(
+                                tooltip: 'Request email change',
+                                icon: const Icon(Icons.edit),
+                                onPressed: () => Navigator.of(context).push(
+                                  MaterialPageRoute(
+                                      builder: (context) => ChangeEmailScreen(
+                                            controller: widget.controller,
+                                          )),
                                 ),
                               ),
-                              ListTile(
-                                title: TextFormField(
-                                  decoration: const InputDecoration(
-                                    labelText: 'Display Name',
-                                    prefixIcon: Icon(Icons.person),
-                                    border: OutlineInputBorder(),
-                                  ),
-                                  controller: displayName,
-                                  validator: (val) {
-                                    if (val == null) {
-                                      return 'Display name required';
-                                    }
-                                    if (val.isEmpty) {
-                                      return 'Display name cannot be empty';
-                                    }
-                                    return null;
-                                  },
-                                ),
+                            ),
+                          ListTile(
+                            title: TextFormField(
+                              decoration: const InputDecoration(
+                                labelText: 'Username',
+                                prefixIcon: Icon(Icons.person_outlined),
+                                border: OutlineInputBorder(),
                               ),
-                              if (edited)
-                                ListTile(
-                                  title: FilledButton.tonal(
-                                    child: const Text('Save Info'),
-                                    onPressed: () => save(context),
-                                  ),
-                                ),
-                              if (_user != null) ...[
-                                ListTile(
-                                  title: OutlinedButton.icon(
-                                    label: const Text('Change Password'),
-                                    icon: const Icon(Icons.edit),
-                                    onPressed: () => Navigator.of(context).push(
-                                      MaterialPageRoute(
-                                        builder: (context) =>
-                                            ChangePasswordScreen(
-                                          controller: widget.controller,
-                                          model: _user!,
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                                ListTile(
-                                  title: OutlinedButton.icon(
-                                    label: const Text('Change Email'),
-                                    icon: const Icon(Icons.edit),
-                                    onPressed: () => Navigator.of(context).push(
-                                      MaterialPageRoute(
-                                        builder: (context) => ChangeEmailScreen(
-                                          controller: widget.controller,
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ],
+                              controller: username,
+                              validator: (val) {
+                                if (val == null) {
+                                  return 'Username required';
+                                }
+                                if (val.isEmpty) {
+                                  return 'Username cannot be empty';
+                                }
+                                return null;
+                              },
+                            ),
                           ),
-                        ),
-                      ),
-                      if (externalAuthProviders.isNotEmpty)
-                        Card(
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              for (final provider in externalAuthProviders) ...[
-                                ListTile(
-                                  title: FilledButton.tonal(
-                                    onPressed: loadingProvider == provider
-                                        ? null
-                                        : () => link(context, provider),
-                                    child: Builder(builder: (context) {
-                                      final action =
-                                          provider.isLinked(externalMethods)
-                                              ? 'Disconnect'
-                                              : 'Connect';
-                                      return Row(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          Text(
-                                              '$action with ${provider.label}'),
-                                          if (loadingProvider == provider) ...[
-                                            const SizedBox(width: 8),
-                                            const SizedBox(
-                                              width: 16,
-                                              height: 16,
-                                              child: CircularProgressIndicator(
-                                                strokeWidth: 2,
-                                              ),
-                                            ),
-                                          ],
-                                        ],
-                                      );
-                                    }),
+                          ListTile(
+                            title: TextFormField(
+                              decoration: const InputDecoration(
+                                labelText: 'Display Name',
+                                prefixIcon: Icon(Icons.person),
+                                border: OutlineInputBorder(),
+                              ),
+                              controller: displayName,
+                              validator: (val) {
+                                if (val == null) {
+                                  return 'Display name required';
+                                }
+                                if (val.isEmpty) {
+                                  return 'Display name cannot be empty';
+                                }
+                                return null;
+                              },
+                            ),
+                          ),
+                          if (edited)
+                            ListTile(
+                              title: FilledButton.tonal(
+                                child: const Text('Save Info'),
+                                onPressed: () => save(context),
+                              ),
+                            ),
+                          if (_user != null) ...[
+                            ListTile(
+                              title: OutlinedButton.icon(
+                                label: const Text('Change Password'),
+                                icon: const Icon(Icons.edit),
+                                onPressed: () => Navigator.of(context).push(
+                                  MaterialPageRoute(
+                                    builder: (context) => ChangePasswordScreen(
+                                      controller: widget.controller,
+                                      model: _user!,
+                                    ),
                                   ),
                                 ),
-                              ],
-                            ],
-                          ),
-                        ),
-                      Card(
-                        child: ExpansionTile(
-                          title: const Text('Additional Info'),
-                          leading: const Icon(Icons.info),
-                          children: [
-                            if (dateModified.isNotEmpty)
-                              ListTile(
-                                title: const Text('Last Modified'),
-                                subtitle: Text(timeago
-                                    .format(DateTime.parse(dateModified))),
-                                leading: const Icon(Icons.calendar_today),
                               ),
-                            if (dateCreated.isNotEmpty)
-                              ListTile(
-                                title: const Text('Account Created'),
-                                subtitle: Text(timeago
-                                    .format(DateTime.parse(dateCreated))),
-                                leading: const Icon(Icons.calendar_today),
+                            ),
+                            ListTile(
+                              title: OutlinedButton.icon(
+                                label: const Text('Change Email'),
+                                icon: const Icon(Icons.edit),
+                                onPressed: () => Navigator.of(context).push(
+                                  MaterialPageRoute(
+                                    builder: (context) => ChangeEmailScreen(
+                                      controller: widget.controller,
+                                    ),
+                                  ),
+                                ),
                               ),
+                            ),
                           ],
-                        ),
+                        ],
                       ),
-                      if (error != null && error.isNotEmpty) ...[
-                        ListTile(
-                          title: Text(
-                            error,
-                            textAlign: TextAlign.center,
-                            style: Theme.of(context)
-                                .textTheme
-                                .bodyMedium
-                                ?.copyWith(
-                                    color: Theme.of(context).colorScheme.error),
-                          ),
-                        ),
-                      ],
-                    ],
+                    ),
                   ),
-                ),
+                  if (externalAuthProviders.isNotEmpty)
+                    Card(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          for (final provider in externalAuthProviders) ...[
+                            ListTile(
+                              title: FilledButton.tonal(
+                                onPressed: loadingProvider == provider
+                                    ? null
+                                    : () => link(context, provider),
+                                child: Builder(builder: (context) {
+                                  final action =
+                                      provider.isLinked(externalMethods)
+                                          ? 'Disconnect'
+                                          : 'Connect';
+                                  return Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Text('$action with ${provider.label}'),
+                                      if (loadingProvider == provider) ...[
+                                        const SizedBox(width: 8),
+                                        const SizedBox(
+                                          width: 16,
+                                          height: 16,
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 2,
+                                          ),
+                                        ),
+                                      ],
+                                    ],
+                                  );
+                                }),
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                  Card(
+                    child: ExpansionTile(
+                      title: const Text('Additional Info'),
+                      leading: const Icon(Icons.info),
+                      children: [
+                        if (dateModified.isNotEmpty)
+                          ListTile(
+                            title: const Text('Last Modified'),
+                            subtitle: Text(
+                                timeago.format(DateTime.parse(dateModified))),
+                            leading: const Icon(Icons.calendar_today),
+                          ),
+                        if (dateCreated.isNotEmpty)
+                          ListTile(
+                            title: const Text('Account Created'),
+                            subtitle: Text(
+                                timeago.format(DateTime.parse(dateCreated))),
+                            leading: const Icon(Icons.calendar_today),
+                          ),
+                      ],
+                    ),
+                  ),
+                  if (error != null && error.isNotEmpty) ...[
+                    ListTile(
+                      title: Text(
+                        error,
+                        textAlign: TextAlign.center,
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            color: Theme.of(context).colorScheme.error),
+                      ),
+                    ),
+                  ],
+                ],
               ),
-            );
-          }),
+            ),
+          ),
         );
-      },
+      }),
     );
   }
 }
