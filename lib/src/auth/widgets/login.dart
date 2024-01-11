@@ -114,6 +114,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 },
               );
             }),
+            gap,
             TextFormField(
               controller: password,
               obscureText: !showPassword,
@@ -140,6 +141,7 @@ class _LoginScreenState extends State<LoginScreen> {
               },
             ),
           ],
+          gap,
           if (error != null) ...[
             Row(
               children: [

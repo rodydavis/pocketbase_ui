@@ -128,6 +128,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
               return null;
             },
           ),
+          gap,
           if (methods.usernamePassword)
             TextFormField(
               controller: username,
@@ -144,6 +145,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
               },
             ),
           if (methods.emailPassword) ...[
+            gap,
             TextFormField(
               controller: email,
               decoration: const InputDecoration(labelText: 'Email'),
@@ -159,6 +161,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 return null;
               },
             ),
+            gap,
             SwitchListTile(
               contentPadding: EdgeInsets.zero,
               value: publicEmail,
@@ -173,6 +176,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
               subtitle: const Text('Email visible to other users'),
             ),
           ],
+          gap,
           TextFormField(
             controller: password,
             decoration: const InputDecoration(labelText: 'Password'),
@@ -182,6 +186,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
               return null;
             },
           ),
+          gap,
           TextFormField(
             controller: passwordConfirm,
             decoration: const InputDecoration(labelText: 'Confirm Password'),
@@ -192,6 +197,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
               return null;
             },
           ),
+          gap,
           if (error != null) ...[
             Row(
               children: [
