@@ -44,14 +44,6 @@ class SignInScreen extends StatefulWidget {
 class SignInScreenState extends State<SignInScreen> {
   late final AuthController controller = widget.controller;
   final _currentError = signal<String?>(null);
-  bool healthy = true;
-  Timer? healthTimer;
-
-  @override
-  void dispose() {
-    healthTimer?.cancel();
-    super.dispose();
-  }
 
   void setError(Object? error) {
     if (error is ClientException) {
@@ -71,6 +63,7 @@ class SignInScreenState extends State<SignInScreen> {
   Widget build(BuildContext context) {
     final fonts = Theme.of(context).textTheme;
     final colors = Theme.of(context).colorScheme;
+    final healthy = controller.healthy.watch(context);
     if (!healthy) {
       return const Scaffold(
         body: Center(
