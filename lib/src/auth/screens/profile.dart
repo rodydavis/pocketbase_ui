@@ -1,11 +1,13 @@
-part of '../screens/sign_in.dart';
+part of 'sign_in.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({
     super.key,
     required this.controller,
+    this.automaticallyImplyLeading = true,
   });
 
+  final bool automaticallyImplyLeading;
   final AuthController controller;
 
   @override
@@ -192,6 +194,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Profile Screen'),
+        automaticallyImplyLeading: widget.automaticallyImplyLeading,
         actions: [
           TextButton(
             onPressed: () => widget.controller.logout(),

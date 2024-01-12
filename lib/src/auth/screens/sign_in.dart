@@ -17,7 +17,7 @@ import 'verify_email.dart';
 
 part '../widgets/login.dart';
 part '../widgets/register.dart';
-part '../widgets/profile.dart';
+part 'profile.dart';
 
 final _currentScreen = signal(AuthScreen.login);
 
