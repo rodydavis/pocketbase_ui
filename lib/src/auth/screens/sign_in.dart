@@ -126,10 +126,12 @@ class SignInScreenState extends State<SignInScreen> {
                 );
               }
             }
-            return (switch (_currentScreen.watch(context)) {
-              AuthScreen.login => LoginScreen(controller: controller),
-              AuthScreen.register => RegisterScreen(controller: controller),
-            });
+            return SingleChildScrollView(
+              child: (switch (_currentScreen.watch(context)) {
+                AuthScreen.login => LoginScreen(controller: controller),
+                AuthScreen.register => RegisterScreen(controller: controller),
+              }),
+            );
           },
         ),
       ),
