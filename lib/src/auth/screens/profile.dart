@@ -5,10 +5,14 @@ class ProfileScreen extends StatefulWidget {
     super.key,
     required this.controller,
     this.automaticallyImplyLeading = true,
+    this.actions = const [],
+    this.children = const [],
   });
 
   final bool automaticallyImplyLeading;
   final AuthController controller;
+  final List<Widget> actions;
+  final List<Widget> children;
 
   @override
   State<ProfileScreen> createState() => _ProfileScreenState();
@@ -196,6 +200,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         title: const Text('Profile Screen'),
         automaticallyImplyLeading: widget.automaticallyImplyLeading,
         actions: [
+          ...widget.actions,
           TextButton(
             onPressed: () => widget.controller.logout(),
             child: const Text('Logout'),
@@ -378,6 +383,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         ],
                       ),
                     ),
+                  ...widget.children,
                   Card(
                     child: ExpansionTile(
                       title: const Text('Additional Info'),
