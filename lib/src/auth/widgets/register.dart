@@ -230,11 +230,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             const Text('Register'),
                             if (loading()) ...[
                               const SizedBox(width: 8),
-                              const SizedBox(
+                              SizedBox(
                                 width: 16,
                                 height: 16,
                                 child: CircularProgressIndicator(
                                   strokeWidth: 2,
+                                  color:
+                                      Theme.of(context).colorScheme.onPrimary,
                                 ),
                               ),
                             ],

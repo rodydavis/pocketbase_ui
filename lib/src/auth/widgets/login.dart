@@ -175,11 +175,13 @@ class _LoginScreenState extends State<LoginScreen> {
                             const Text('Login'),
                             if (loading()) ...[
                               const SizedBox(width: 8),
-                              const SizedBox(
+                              SizedBox(
                                 width: 16,
                                 height: 16,
                                 child: CircularProgressIndicator(
                                   strokeWidth: 2,
+                                  color:
+                                      Theme.of(context).colorScheme.onPrimary,
                                 ),
                               ),
                             ],
