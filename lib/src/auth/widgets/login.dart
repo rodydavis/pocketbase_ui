@@ -13,9 +13,9 @@ class _LoginScreenState extends State<LoginScreen> {
   final formKey = GlobalKey<FormState>();
   final username = TextEditingController();
   final password = TextEditingController();
-  bool showPassword = false;
+  final showPassword = signal(false);
   final _currentError = signal<String?>(null);
-  bool loading = false;
+  final loading = signal(false);
 
   late final AuthController controller = widget.controller;
   late final client = controller.client;
@@ -38,11 +38,7 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   void setLoading(bool loading) {
-    if (mounted) {
-      setState(() {
-        this.loading = loading;
-      });
-    }
+    this.loading.value = loading;
   }
 
   Future<void> login(BuildContext context, AuthProvider provider) async {
@@ -66,176 +62,175 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final fonts = Theme.of(context).textTheme;
-    final colors = Theme.of(context).colorScheme;
-    const gap = SizedBox(height: 20);
-    final providers = AuthController.providers;
-    final emailProvider = providers.whereType<EmailAuthProvider>().firstOrNull;
-    final externalAuthProviders = providers.whereType<OAuth2AuthProvider>();
-    final methods = controller.methods.value!;
-    final error = _currentError.watch(context);
-    return Form(
-      key: formKey,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  'Sign In',
-                  style: fonts.displaySmall,
-                ),
-              ),
-            ],
-          ),
-          gap,
-          if (emailProvider != null) ...[
-            Builder(builder: (context) {
-              final emailOk = methods.emailPassword;
-              final usernameOk = methods.usernamePassword;
-              final label = (switch ((emailOk, usernameOk)) {
-                (true, true) => 'Username or Email',
-                (true, false) => 'Email',
-                (false, true) => 'Username',
-                (false, false) => 'N/A',
-              });
-              return TextFormField(
-                controller: username,
-                decoration: InputDecoration(
-                  labelText: label,
-                ),
-                validator: (val) {
-                  if (val == null) return '$label required';
-                  if (val.isEmpty) return '$label cannot be empty';
-                  return null;
-                },
-              );
-            }),
-            gap,
-            TextFormField(
-              controller: password,
-              obscureText: !showPassword,
-              decoration: InputDecoration(
-                labelText: 'Password',
-                suffixIcon: IconButton(
-                  tooltip: '${showPassword ? 'Hide' : 'Show'} Password',
-                  onPressed: () {
-                    if (mounted) {
-                      setState(() {
-                        showPassword = !showPassword;
-                      });
-                    }
-                  },
-                  icon: Icon(
-                    showPassword ? Icons.visibility_off : Icons.visibility,
-                  ),
-                ),
-              ),
-              validator: (val) {
-                if (val == null) return 'Password required';
-                if (val.isEmpty) return 'Password cannot be empty';
-                return null;
-              },
-            ),
-          ],
-          gap,
-          if (error != null) ...[
+    return Watch((context) {
+      final fonts = Theme.of(context).textTheme;
+      final colors = Theme.of(context).colorScheme;
+      const gap = SizedBox(height: 20);
+      final providers = AuthController.providers;
+      final emailProvider =
+          providers.whereType<EmailAuthProvider>().firstOrNull;
+      final externalAuthProviders = providers.whereType<OAuth2AuthProvider>();
+      final methods = controller.methods.value!;
+      final error = _currentError.watch(context);
+      return Form(
+        key: formKey,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.start,
+          children: [
             Row(
               children: [
                 Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.all(8),
-                    child: Text(
-                      error,
-                      textAlign: TextAlign.center,
-                      style: fonts.bodyMedium?.copyWith(color: colors.error),
-                    ),
+                  child: Text(
+                    'Sign In',
+                    style: fonts.displaySmall,
                   ),
                 ),
               ],
             ),
-          ],
-          gap,
-          Row(
-            children: [
-              Expanded(
-                child: Wrap(
-                  alignment: WrapAlignment.spaceBetween,
-                  children: [
-                    FilledButton(
-                      onPressed: loading
-                          ? null
-                          : () async {
-                              if (emailProvider == null) return;
-                              if (formKey.currentState!.validate()) {
-                                formKey.currentState!.save();
-                                await login(context, emailProvider);
-                              }
-                            },
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Text('Login'),
-                          if (loading) ...[
-                            const SizedBox(width: 8),
-                            const SizedBox(
-                              width: 16,
-                              height: 16,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                              ),
-                            ),
-                          ],
-                        ],
+            gap,
+            if (emailProvider != null) ...[
+              Builder(builder: (context) {
+                final emailOk = methods.emailPassword;
+                final usernameOk = methods.usernamePassword;
+                final label = (switch ((emailOk, usernameOk)) {
+                  (true, true) => 'Username or Email',
+                  (true, false) => 'Email',
+                  (false, true) => 'Username',
+                  (false, false) => 'N/A',
+                });
+                return TextFormField(
+                  controller: username,
+                  decoration: InputDecoration(
+                    labelText: label,
+                  ),
+                  validator: (val) {
+                    if (val == null) return '$label required';
+                    if (val.isEmpty) return '$label cannot be empty';
+                    return null;
+                  },
+                );
+              }),
+              gap,
+              TextFormField(
+                controller: password,
+                obscureText: !showPassword(),
+                decoration: InputDecoration(
+                  labelText: 'Password',
+                  suffixIcon: IconButton(
+                    tooltip: '${showPassword() ? 'Hide' : 'Show'} Password',
+                    onPressed: () {
+                      showPassword.value = !showPassword();
+                    },
+                    icon: Icon(
+                      showPassword() ? Icons.visibility_off : Icons.visibility,
+                    ),
+                  ),
+                ),
+                validator: (val) {
+                  if (val == null) return 'Password required';
+                  if (val.isEmpty) return 'Password cannot be empty';
+                  return null;
+                },
+              ),
+            ],
+            gap,
+            if (error != null) ...[
+              Row(
+                children: [
+                  Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.all(8),
+                      child: Text(
+                        error,
+                        textAlign: TextAlign.center,
+                        style: fonts.bodyMedium?.copyWith(color: colors.error),
                       ),
                     ),
-                    Builder(builder: (context) {
-                      return TextButton(
-                        onPressed: () {
-                          Navigator.of(context).push(MaterialPageRoute(
-                            builder: (context) => ForgotPasswordScreen(
-                              controller: widget.controller,
-                            ),
-                          ));
-                        },
-                        child: const Text('Forgot your password?'),
-                      );
-                    }),
-                  ],
+                  ),
+                ],
+              ),
+            ],
+            gap,
+            Row(
+              children: [
+                Expanded(
+                  child: Wrap(
+                    alignment: WrapAlignment.spaceBetween,
+                    children: [
+                      FilledButton(
+                        onPressed: loading()
+                            ? () => setLoading(false)
+                            : () async {
+                                if (emailProvider == null) return;
+                                if (formKey.currentState!.validate()) {
+                                  formKey.currentState!.save();
+                                  await login(context, emailProvider);
+                                }
+                              },
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Text('Login'),
+                            if (loading()) ...[
+                              const SizedBox(width: 8),
+                              const SizedBox(
+                                width: 16,
+                                height: 16,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
+                      Builder(builder: (context) {
+                        return TextButton(
+                          onPressed: () {
+                            Navigator.of(context).push(MaterialPageRoute(
+                              builder: (context) => ForgotPasswordScreen(
+                                controller: widget.controller,
+                              ),
+                            ));
+                          },
+                          child: const Text('Forgot your password?'),
+                        );
+                      }),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            gap,
+            Row(
+              children: [
+                Expanded(
+                  child: Builder(builder: (context) {
+                    return OutlinedButton(
+                      onPressed: () {
+                        _currentScreen.set(AuthScreen.register);
+                      },
+                      child: const Text('Create a new account'),
+                    );
+                  }),
+                ),
+              ],
+            ),
+            gap,
+            for (final provider in externalAuthProviders) ...[
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                title: FilledButton.tonal(
+                  onPressed: () => login(context, provider),
+                  child: Text('Sign in with ${provider.label}'),
                 ),
               ),
             ],
-          ),
-          gap,
-          Row(
-            children: [
-              Expanded(
-                child: Builder(builder: (context) {
-                  return OutlinedButton(
-                    onPressed: () {
-                      _currentScreen.set(AuthScreen.register);
-                    },
-                    child: const Text('Create a new account'),
-                  );
-                }),
-              ),
-            ],
-          ),
-          gap,
-          for (final provider in externalAuthProviders) ...[
-            ListTile(
-              contentPadding: EdgeInsets.zero,
-              title: FilledButton.tonal(
-                onPressed: () => login(context, provider),
-                child: Text('Sign in with ${provider.label}'),
-              ),
-            ),
           ],
-        ],
-      ),
-    );
+        ),
+      );
+    });
   }
 }
