@@ -19,109 +19,50 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
-  bool edited = false;
-  bool loading = false;
+  final edited = signal(false);
+  final loading = signal(false);
   final _currentError = signal<String?>(null);
   final _formKey = GlobalKey<FormState>();
   final displayName = TextEditingController();
   final username = TextEditingController();
-  String email = '';
-  bool emailVisibility = false;
-  bool verified = false;
-  bool userFound = false;
-  String dateCreated = '', dateModified = '';
   List<ExternalAuthModel> externalMethods = [];
-  bool isAdmin = false;
   OAuth2AuthProvider? loadingProvider;
-  RecordModel? _user;
-
-  void setLoading(bool loading) {
-    if (mounted) {
-      setState(() {
-        this.loading = loading;
-      });
-    }
-  }
+  late final _user = widget.controller.user$;
 
   void setError(Object? error) {
-    if (mounted) {
-      setState(() {
-        if (error is ClientException) {
-          if (error.response.containsKey('message')) {
-            _currentError.value = error.response['message'].toString();
-          } else {
-            _currentError.value = error.originalError.toString();
-          }
-        } else {
-          _currentError.value = error?.toString();
-        }
-      });
-    }
-  }
-
-  void setEdited(bool edited) {
-    if (mounted) {
-      setState(() {
-        this.edited = edited;
-      });
+    if (error is ClientException) {
+      if (error.response.containsKey('message')) {
+        _currentError.value = error.response['message'].toString();
+      } else {
+        _currentError.value = error.originalError.toString();
+      }
+    } else {
+      _currentError.value = error?.toString();
     }
   }
 
   void onAuthEvent() async {
-    isAdmin = false;
     _currentError.value = null;
-    if (widget.controller.user$() == null) {
-      if (mounted) {
-        setState(() {
-          userFound = false;
-        });
-      }
-      return;
-    }
-    setLoading(true);
     final user = widget.controller.user$();
-    if (user is AdminModel) {
-      if (mounted) {
-        setState(() {
-          isAdmin = true;
-        });
-      }
-    } else if (user is RecordModel) {
-      _user = user;
-      externalMethods = await widget //
-          .controller
-          .authService
-          .listExternalAuths(user.id);
-      final displayName = user.getStringValue('name');
-      final username = user.getStringValue('username');
-      if (displayName.isNotEmpty && this.displayName.text != displayName) {
-        this.displayName.text = displayName;
-      }
-      if (username.isNotEmpty && this.username.text != username) {
-        this.username.text = username;
-      }
-      final data = user.toJson();
-      final created = data['created'];
-      final updated = data['updated'];
-      final email = user.getStringValue('email');
-      final verified = user.getBoolValue('verified', false);
-      final emailVisibility = user.getBoolValue('emailVisibility', false);
-      if (mounted) {
-        setState(() {
-          this.email = email;
-          this.emailVisibility = emailVisibility;
-          this.verified = verified;
-          dateCreated = created;
-          dateModified = updated;
-          userFound = true;
-        });
-      }
+    if (user == null) return;
+    loading.value = true;
+    externalMethods = await widget //
+        .controller
+        .authService
+        .listExternalAuths(user.id);
+    final displayName = user.getStringValue('name');
+    final username = user.getStringValue('username');
+    if (displayName.isNotEmpty && this.displayName.text != displayName) {
+      this.displayName.text = displayName;
+    }
+    if (username.isNotEmpty && this.username.text != username) {
+      this.username.text = username;
     }
   }
 
   Future<void> link(BuildContext context, OAuth2AuthProvider provider) async {
     try {
-      setLoading(true);
+      loading.value = true;
       setError(null);
       if (mounted) {
         setState(() {
@@ -144,48 +85,38 @@ class _ProfileScreenState extends State<ProfileScreen> {
         loadingProvider = null;
       });
     }
-    setLoading(false);
-  }
-
-  EffectCleanup? _cleanup;
-
-  @override
-  void initState() {
-    super.initState();
-    _cleanup = effect(() {
-      widget.controller.auth$.value;
-      onAuthEvent();
-    });
+    loading.value = false;
   }
 
   @override
   void dispose() {
-    _cleanup?.call();
+    _user.dispose();
     super.dispose();
   }
 
   Future<void> save(BuildContext context) async {
-    if (!userFound || _user == null) return;
-    if (!edited) return;
+    final user = _user.value;
+    if (user == null) return;
+    if (!edited()) return;
     if (_formKey.currentState!.validate()) {
       _formKey.currentState!.save();
       setError(null);
-      setLoading(true);
+      loading.value = true;
       try {
-        await widget.controller.authService.update(_user!.id, body: {
-          if (username.text != _user!.getStringValue('username')) ...{
+        await widget.controller.authService.update(user.id, body: {
+          if (username.text != user.getStringValue('username')) ...{
             'username': username.text.trim(),
           },
-          if (displayName.text != _user!.getStringValue('name')) ...{
+          if (displayName.text != user.getStringValue('name')) ...{
             'name': displayName.text.trim(),
           },
         });
-        setEdited(false);
+        edited.value = false;
       } catch (e) {
         debugPrint('Error save info: $e');
         setError(e);
       }
-      setLoading(false);
+      loading.value = false;
     }
   }
 
@@ -194,30 +125,35 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final providers = AuthController.providers;
     final externalAuthProviders = providers.whereType<OAuth2AuthProvider>();
     final error = _currentError.watch(context);
-    widget.controller.auth$.watch(context);
+    final user = _user.watch(context);
     return Scaffold(
       appBar: AppBar(
         title: const Text('Profile Screen'),
         automaticallyImplyLeading: widget.automaticallyImplyLeading,
-        actions: [
-          ...widget.actions,
-          TextButton(
-            onPressed: () => widget.controller.logout(),
-            child: const Text('Logout'),
-          ),
-        ],
+        actions: user == null
+            ? []
+            : [
+                ...widget.actions,
+                TextButton(
+                  onPressed: () => widget.controller.logout(),
+                  child: const Text('Logout'),
+                ),
+              ],
       ),
-      body: Builder(builder: (context) {
-        // TODO: Delete / logout
-        if (!userFound && loading) {
+      body: Watch.builder(builder: (context) {
+        final user = _user.watch(context);
+        if (user == null && loading()) {
           return const Center(child: CircularProgressIndicator());
         }
-        if (!userFound && !loading) {
+        if (user == null && !loading()) {
           return const Center(child: Text('User not found'));
         }
-        if (isAdmin) {
-          return const Center(child: Text('Admin user'));
-        }
+        final data = user!.toJson();
+        final created = data['created'];
+        final updated = data['updated'];
+        final email = user.getStringValue('email');
+        final verified = user.getBoolValue('verified', false);
+        final emailVisibility = user.getBoolValue('emailVisibility', false);
         return SingleChildScrollView(
           child: Center(
             child: ConstrainedBox(
@@ -228,7 +164,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   Card(
                     child: Form(
                       key: _formKey,
-                      onChanged: () => setEdited(true),
+                      onChanged: () => edited.value = true,
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
@@ -304,42 +240,40 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               },
                             ),
                           ),
-                          if (edited)
+                          if (edited())
                             ListTile(
                               title: FilledButton.tonal(
                                 child: const Text('Save Info'),
                                 onPressed: () => save(context),
                               ),
                             ),
-                          if (_user != null) ...[
-                            ListTile(
-                              title: OutlinedButton.icon(
-                                label: const Text('Change Password'),
-                                icon: const Icon(Icons.edit),
-                                onPressed: () => Navigator.of(context).push(
-                                  MaterialPageRoute(
-                                    builder: (context) => ChangePasswordScreen(
-                                      controller: widget.controller,
-                                      model: _user!,
-                                    ),
+                          ListTile(
+                            title: OutlinedButton.icon(
+                              label: const Text('Change Password'),
+                              icon: const Icon(Icons.edit),
+                              onPressed: () => Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder: (context) => ChangePasswordScreen(
+                                    controller: widget.controller,
+                                    model: user,
                                   ),
                                 ),
                               ),
                             ),
-                            ListTile(
-                              title: OutlinedButton.icon(
-                                label: const Text('Change Email'),
-                                icon: const Icon(Icons.edit),
-                                onPressed: () => Navigator.of(context).push(
-                                  MaterialPageRoute(
-                                    builder: (context) => ChangeEmailScreen(
-                                      controller: widget.controller,
-                                    ),
+                          ),
+                          ListTile(
+                            title: OutlinedButton.icon(
+                              label: const Text('Change Email'),
+                              icon: const Icon(Icons.edit),
+                              onPressed: () => Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder: (context) => ChangeEmailScreen(
+                                    controller: widget.controller,
                                   ),
                                 ),
                               ),
                             ),
-                          ],
+                          ),
                         ],
                       ),
                     ),
@@ -389,18 +323,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       title: const Text('Additional Info'),
                       leading: const Icon(Icons.info),
                       children: [
-                        if (dateModified.isNotEmpty)
+                        if (updated.isNotEmpty)
                           ListTile(
                             title: const Text('Last Modified'),
-                            subtitle: Text(
-                                timeago.format(DateTime.parse(dateModified))),
+                            subtitle:
+                                Text(timeago.format(DateTime.parse(updated))),
                             leading: const Icon(Icons.calendar_today),
                           ),
-                        if (dateCreated.isNotEmpty)
+                        if (created.isNotEmpty)
                           ListTile(
                             title: const Text('Account Created'),
-                            subtitle: Text(
-                                timeago.format(DateTime.parse(dateCreated))),
+                            subtitle:
+                                Text(timeago.format(DateTime.parse(created))),
                             leading: const Icon(Icons.calendar_today),
                           ),
                       ],
