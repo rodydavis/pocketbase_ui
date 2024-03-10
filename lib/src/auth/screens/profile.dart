@@ -70,7 +70,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   void onAuthEvent() async {
     isAdmin = false;
     _currentError.value = null;
-    if (widget.controller.value == null) {
+    if (widget.controller.user$() == null) {
       if (mounted) {
         setState(() {
           userFound = false;
@@ -79,7 +79,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       return;
     }
     setLoading(true);
-    final (_, user) = widget.controller.value!;
+    final user = widget.controller.user$();
     if (user is AdminModel) {
       if (mounted) {
         setState(() {
@@ -153,7 +153,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   void initState() {
     super.initState();
     _cleanup = effect(() {
-      widget.controller.value;
+      widget.controller.auth$.value;
       onAuthEvent();
     });
   }
@@ -194,7 +194,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final providers = AuthController.providers;
     final externalAuthProviders = providers.whereType<OAuth2AuthProvider>();
     final error = _currentError.watch(context);
-    widget.controller.watch(context);
+    widget.controller.auth$.watch(context);
     return Scaffold(
       appBar: AppBar(
         title: const Text('Profile Screen'),

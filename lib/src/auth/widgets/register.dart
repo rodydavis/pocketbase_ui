@@ -98,7 +98,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
           ],
         );
       }
-      final methods = controller.methods.value!;
+      final methods = controller.methods$()!;
       return Form(
         key: formKey,
         child: Column(
@@ -110,7 +110,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
               children: [
                 Expanded(
                   child: Text(
-                    'Register',
+                    'Create a new account',
                     style: fonts.displaySmall,
                   ),
                 ),

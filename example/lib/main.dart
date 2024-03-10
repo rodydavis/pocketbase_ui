@@ -1,21 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:pocketbase/pocketbase.dart';
 import 'package:pocketbase_ui/pocketbase_ui.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:signals/signals_flutter.dart';
+import 'package:signals/signals_flutter.dart' hide connect;
+import 'package:sqlite_storage/sqlite_storage.dart';
+import 'package:sqlite_storage_pocketbase/sqlite_storage_pocketbase.dart';
+
+import 'connection/connection.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   final prefs = await SharedPreferences.getInstance();
-  const authKey = 'pb_auth';
-  final pb = PocketBase(
+  final pb = await OfflinePocketBase.init(
     'https://pocketbase.io',
-    authStore: AsyncAuthStore(
-      save: (data) async => prefs.setString(authKey, data),
-      initial: prefs.getString(authKey),
-      clear: () => prefs.remove(authKey),
-    ),
+    DriftStorage(connect('pb-example-db.sqlite')),
   );
   runApp(App(prefs: prefs, pb: pb));
 }
@@ -27,7 +25,7 @@ class App extends StatefulWidget {
     required this.prefs,
   });
 
-  final PocketBase pb;
+  final OfflinePocketBase pb;
   final SharedPreferences prefs;
 
   static AppState of(BuildContext context) {
@@ -41,7 +39,7 @@ class App extends StatefulWidget {
 class AppState extends State<App> {
   final themeMode = ValueNotifier(ThemeMode.light);
   static const seedColor = Colors.deepPurple;
-  late final PocketBase pb = widget.pb;
+  late final OfflinePocketBase pb = widget.pb;
   late final SharedPreferences prefs = widget.prefs;
   late final _controller = AuthController(
     client: pb,
@@ -50,16 +48,16 @@ class AppState extends State<App> {
 
   late final _router = GoRouter(
     initialLocation: '/',
-    refreshListenable: _controller.toValueListenable(),
+    refreshListenable: _controller.auth$.toValueListenable(),
     redirect: (context, state) {
-      if (!_controller.isSignedIn) return '/sign-in';
+      if (!_controller.isSignedIn$()) return '/sign-in';
       return null;
     },
     routes: <RouteBase>[
       GoRoute(
         path: '/',
         redirect: (context, state) {
-          if (!_controller.isSignedIn) {
+          if (!_controller.isSignedIn$()) {
             return '/sign-in?redirect_url=${state.matchedLocation}';
           }
           return null;
@@ -79,7 +77,7 @@ class AppState extends State<App> {
       GoRoute(
         path: '/sign-in',
         redirect: (context, state) {
-          if (_controller.isSignedIn) {
+          if (_controller.isSignedIn$()) {
             final prev = state.uri.queryParameters['redirect_url'];
             if (prev != null) return prev;
             return '/';

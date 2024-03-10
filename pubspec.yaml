@@ -1,6 +1,7 @@
 name: pocketbase_ui
 description: A new Flutter package project.
 version: 0.0.2
+publish_to: 'none'
 
 environment:
   sdk: ">=3.1.0 <4.0.0"
@@ -15,6 +16,10 @@ dependencies:
   signals: ">=4.0.0"
   timeago: ^3.6.0
   url_launcher: ^6.2.0
+  sqlite_storage_pocketbase:
+    git:
+      url: https://github.com/rodydavis/sqlite_storage
+      path: packages/sqlite_storage_pocketbase
 
 dev_dependencies:
   flutter_test:

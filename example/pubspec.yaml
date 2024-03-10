@@ -11,10 +11,22 @@ dependencies:
   cupertino_icons: ^1.0.2
   pocketbase_ui:
     path: ../
-  pocketbase: ^0.16.0
+  pocketbase: ">=0.15.0 <1.0.0"
   shared_preferences: ^2.2.2
   go_router: ^12.1.1
-  signals: ^2.1.10
+  signals: ">=4.0.0"
+  sqlite_storage_pocketbase:
+    git:
+      url: https://github.com/rodydavis/sqlite_storage
+      path: packages/sqlite_storage_pocketbase
+  sqlite_storage:
+    git:
+      url: https://github.com/rodydavis/sqlite_storage
+      path: packages/sqlite_storage
+  drift: ^2.16.0
+  sqlite3: ^2.4.0
+  path: ^1.9.0
+  path_provider: ^2.1.2
 
 dev_dependencies:
   flutter_test:

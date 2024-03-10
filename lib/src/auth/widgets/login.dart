@@ -70,7 +70,7 @@ class _LoginScreenState extends State<LoginScreen> {
       final emailProvider =
           providers.whereType<EmailAuthProvider>().firstOrNull;
       final externalAuthProviders = providers.whereType<OAuth2AuthProvider>();
-      final methods = controller.methods.value!;
+      final methods = controller.methods$.value!;
       final error = _currentError.watch(context);
       return Form(
         key: formKey,
@@ -83,7 +83,7 @@ class _LoginScreenState extends State<LoginScreen> {
               children: [
                 Expanded(
                   child: Text(
-                    'Sign In',
+                    widget.controller.emailCheck ? 'Welcome Back!' : 'Login to existing account',
                     style: fonts.displaySmall,
                   ),
                 ),

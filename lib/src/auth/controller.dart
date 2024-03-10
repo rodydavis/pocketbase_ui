@@ -1,7 +1,9 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:pocketbase/pocketbase.dart';
+import 'package:sqlite_storage_pocketbase/sqlite_storage_pocketbase.dart';
 import 'package:signals/signals.dart';
 
 import 'providers/base.dart';
@@ -11,59 +13,65 @@ import 'providers/oauth2.dart';
 /// Auth error event callback
 typedef AuthErrorCallback = FutureOr<void> Function(Object);
 
-typedef User = (String, dynamic);
+// typedef User = (String, dynamic);
 
 /// Auth controller to manage auth lifecycle
-class AuthController extends ValueSignal<User?> {
+class AuthController {
   static List<AuthProvider> providers = [
     EmailAuthProvider(),
     AppleAuthProvider(),
     GoogleAuthProvider(),
   ];
 
-  final PocketBase client;
-
+  final OfflinePocketBase client;
   final AuthErrorCallback errorCallback;
-
   final String authCollectionIrOrName;
+  late final authService = client.collection(authCollectionIrOrName);
+  final Signal<String?> auth$ = signal(null);
+  final String Function(String)? emailCheckUrl;
 
-  StreamSubscription<AuthStoreEvent>? _authEventStream;
+  late final ReadonlySignal<RecordModel?> user$ = computed(() {
+    auth$.value;
+    final model = client.offlineAuthStore.model;
+    if (model is RecordModel) return model;
+    return null;
+  });
 
-  final methods = ValueNotifier<AuthMethodsList?>(null);
+  late final ReadonlySignal<bool> isSignedIn$ = computed(() {
+    auth$.value;
+    final model = client.offlineAuthStore.model;
+    return model != null && client.offlineAuthStore.isValid;
+  });
+
+  late final ReadonlySignal<String?> userId$ = computed(() {
+    auth$.value;
+    final model = client.offlineAuthStore.model;
+    if (model is RecordModel) return model.id;
+    return '';
+  });
+
+  final methods$ = signal<AuthMethodsList?>(null);
 
   final healthy = signal(false);
   Timer? healthTimer;
+  final connects = <Connect>[];
+  Duration healthCheckDelay = const Duration(seconds: 30);
 
   AuthController({
     required this.client,
     required this.errorCallback,
     this.authCollectionIrOrName = 'users',
-    User? initialUser,
-  }) : super(initialUser) {
+    this.emailCheckUrl,
+  }) {
+    connects.add(connect(auth$, client.offlineAuthStore.authEvents));
     for (final provider in providers) {
       provider.client = client;
       provider.authService = authService;
     }
-    _authEventStream = client.authStore.onChange.distinct().listen((event) {
-      debugPrint('Auth event: $event');
-      setAuth(event.token, event.model);
-    });
-    setAuth(client.authStore.token, client.authStore.model);
     checkHealth();
-    healthTimer = Timer.periodic(const Duration(seconds: 30), (_) {
+    healthTimer = Timer.periodic(healthCheckDelay, (_) {
       checkHealth();
     });
-  }
-
-  void setAuth(String token, dynamic model) {
-    debugPrint('set auth: $token $model');
-    if (model is RecordModel) {
-      value = (model.id, model);
-    } else if (model is AdminModel) {
-      value = (model.id, model);
-    } else {
-      value = null;
-    }
   }
 
   void setHealthy(bool value) async {
@@ -71,12 +79,12 @@ class AuthController extends ValueSignal<User?> {
     healthy.value = value;
     if (!wasHealthy && value) {
       await loadProviders();
-      if (isSignedIn) {
+      if (isSignedIn$()) {
         try {
           await authService.authRefresh();
-        } catch (e) {
-          this.value = null;
-          debugPrint('error refresh auth: $e');
+        } catch (e, t) {
+          await logout();
+          debugPrint('error refresh auth: $e, $t');
         }
       }
     }
@@ -92,34 +100,15 @@ class AuthController extends ValueSignal<User?> {
     }
   }
 
-  @override
   void dispose() {
     healthTimer?.cancel();
-    _authEventStream?.cancel();
-    super.dispose();
-  }
-
-  late final authService = client.collection(authCollectionIrOrName);
-
-  bool get isSignedIn =>
-      client.authStore.isValid &&
-      client.authStore.token.trim().isNotEmpty &&
-      value != null;
-
-  String get userId {
-    if (value == null) return '';
-    final (_, model) = value!;
-    if (model is RecordModel) {
-      return model.id;
-    } else if (model is AdminModel) {
-      return model.id;
+    for (final item in connects) {
+      item.dispose();
     }
-    return '';
   }
 
   Future<void> logout() async {
     client.authStore.clear();
-    value = null;
   }
 
   Future<void> delete() async {
@@ -135,10 +124,23 @@ class AuthController extends ValueSignal<User?> {
   Future<void> loadProviders() async {
     try {
       final methods = await authService.listAuthMethods();
-      this.methods.value = methods;
+      methods$.value = methods;
     } catch (e) {
       debugPrint('Error loading auth providers: $e');
       await errorCallback(e);
     }
+  }
+
+  bool get emailCheck => emailCheckUrl != null;
+
+  Future<RecordModel?> checkIfUserExistsForEmail(String email) async {
+    final target = emailCheckUrl?.call(email);
+    if (target == null) return null;
+    final url = client.buildUrl(target);
+    final res = await client.httpClientFactory().get(url);
+    if (res.statusCode == 200) {
+      return RecordModel.fromJson(jsonDecode(res.body));
+    }
+    return null;
   }
 }
