@@ -28,6 +28,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   List<ExternalAuthModel> externalMethods = [];
   OAuth2AuthProvider? loadingProvider;
   late final _user = widget.controller.user$;
+  EffectCleanup? _cleanup;
 
   void setError(Object? error) {
     if (error is ClientException) {
@@ -41,15 +42,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
-  void onAuthEvent() async {
-    _currentError.value = null;
+  void onAuthEvent() {
     final user = widget.controller.user$();
     if (user == null) return;
-    loading.value = true;
-    externalMethods = await widget //
-        .controller
-        .authService
-        .listExternalAuths(user.id);
     final displayName = user.getStringValue('name');
     final username = user.getStringValue('username');
     if (displayName.isNotEmpty && this.displayName.text != displayName) {
@@ -58,6 +53,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
     if (username.isNotEmpty && this.username.text != username) {
       this.username.text = username;
     }
+    untracked(() => load());
+  }
+
+  Future<void> load() async {
+    final user = widget.controller.user$();
+    if (user == null) return;
+    externalMethods = await widget //
+        .controller
+        .authService
+        .listExternalAuths(user.id);
   }
 
   Future<void> link(BuildContext context, OAuth2AuthProvider provider) async {
@@ -89,12 +94,23 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   @override
+  void initState() {
+    super.initState();
+    _cleanup = effect(
+      onAuthEvent,
+      debugLabel: 'Profile listener',
+    );
+  }
+
+  @override
   void dispose() {
+    _cleanup?.call();
     _user.dispose();
     super.dispose();
   }
 
   Future<void> save(BuildContext context) async {
+    _currentError.value = null;
     final user = _user.value;
     if (user == null) return;
     if (!edited()) return;
@@ -126,7 +142,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final externalAuthProviders = providers.whereType<OAuth2AuthProvider>();
     final error = _currentError.watch(context);
     final user = _user.watch(context);
-    _user.listen(context, onAuthEvent);
     return Scaffold(
       appBar: AppBar(
         title: const Text('Profile Screen'),
