@@ -1,9 +1,14 @@
 part of '../screens/sign_in.dart';
 
 class LoginScreen extends StatefulWidget {
-  const LoginScreen({super.key, required this.controller});
+  const LoginScreen({
+    super.key,
+    required this.controller,
+    this.email,
+  });
 
   final AuthController controller;
+  final String? email;
 
   @override
   State<LoginScreen> createState() => _LoginScreenState();
@@ -11,7 +16,7 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen> {
   final formKey = GlobalKey<FormState>();
-  final username = TextEditingController();
+  late final username = TextEditingController(text: widget.email);
   final password = TextEditingController();
   final showPassword = signal(false);
   final _currentError = signal<String?>(null);
@@ -83,7 +88,9 @@ class _LoginScreenState extends State<LoginScreen> {
               children: [
                 Expanded(
                   child: Text(
-                    widget.controller.emailCheck ? 'Welcome Back!' : 'Login to existing account',
+                    widget.controller.emailCheck
+                        ? 'Welcome Back!'
+                        : 'Login to existing account',
                     style: fonts.displaySmall,
                   ),
                 ),

@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import 'package:signals/signals_flutter.dart';
 
@@ -18,8 +17,10 @@ class _EmailCheckState extends State<EmailCheck> {
   final _currentScreen = signal<AuthScreen?>(null);
   final controller = TextEditingController();
   final formKey = GlobalKey<FormState>();
+  final loading = signal(false);
 
   Future<void> checkEmail(BuildContext context) async {
+    loading.value = true;
     final messenger = ScaffoldMessenger.of(context);
     if (formKey.currentState!.validate()) {
       formKey.currentState!.save();
@@ -42,6 +43,7 @@ class _EmailCheckState extends State<EmailCheck> {
         );
       }
     }
+    loading.value = false;
   }
 
   @override
@@ -49,10 +51,16 @@ class _EmailCheckState extends State<EmailCheck> {
     return Watch((context) {
       final screen = _currentScreen();
       if (screen == AuthScreen.login) {
-        return LoginScreen(controller: widget.controller);
+        return LoginScreen(
+          controller: widget.controller,
+          email: controller.text,
+        );
       }
       if (screen == AuthScreen.register) {
-        return RegisterScreen(controller: widget.controller);
+        return RegisterScreen(
+          controller: widget.controller,
+          email: controller.text,
+        );
       }
       return Form(
         key: formKey,
@@ -87,7 +95,7 @@ class _EmailCheckState extends State<EmailCheck> {
             const SizedBox(height: 20),
             ListTile(
               title: FilledButton(
-                onPressed: () => checkEmail(context),
+                onPressed: loading() ? null : () => checkEmail(context),
                 child: const Text('Continue'),
               ),
             ),

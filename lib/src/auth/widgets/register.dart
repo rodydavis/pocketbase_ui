@@ -1,9 +1,14 @@
 part of '../screens/sign_in.dart';
 
 class RegisterScreen extends StatefulWidget {
-  const RegisterScreen({super.key, required this.controller});
+  const RegisterScreen({
+    super.key,
+    required this.controller,
+    this.email,
+  });
 
   final AuthController controller;
+  final String? email;
 
   @override
   State<RegisterScreen> createState() => _RegisterScreenState();
@@ -11,8 +16,8 @@ class RegisterScreen extends StatefulWidget {
 
 class _RegisterScreenState extends State<RegisterScreen> {
   final formKey = GlobalKey<FormState>();
+  late final email = TextEditingController(text: widget.email);
   final username = TextEditingController();
-  final email = TextEditingController();
   final displayName = TextEditingController();
   final password = TextEditingController();
   final passwordConfirm = TextEditingController();
