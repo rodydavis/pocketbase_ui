@@ -126,6 +126,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final externalAuthProviders = providers.whereType<OAuth2AuthProvider>();
     final error = _currentError.watch(context);
     final user = _user.watch(context);
+    _user.listen(context, onAuthEvent);
     return Scaffold(
       appBar: AppBar(
         title: const Text('Profile Screen'),
