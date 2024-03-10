@@ -96,7 +96,23 @@ class _EmailCheckState extends State<EmailCheck> {
             ListTile(
               title: FilledButton(
                 onPressed: loading() ? null : () => checkEmail(context),
-                child: const Text('Continue'),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Text('Continue'),
+                    if (loading()) ...[
+                      const SizedBox(width: 8),
+                      SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Theme.of(context).colorScheme.onPrimary,
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
               ),
             ),
           ],
