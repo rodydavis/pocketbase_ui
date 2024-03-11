@@ -45,6 +45,7 @@ class SignInScreen extends StatefulWidget {
 class SignInScreenState extends State<SignInScreen> {
   late final AuthController controller = widget.controller;
   final _currentError = signal<String?>(null);
+  final showCheck = signal(true);
 
   void setError(Object? error) {
     if (error is ClientException) {
@@ -129,8 +130,14 @@ class SignInScreenState extends State<SignInScreen> {
               }
             }
             return SingleChildScrollView(
-              child: controller.emailCheck
-                  ? EmailCheck(controller: controller)
+              child: controller.emailCheck && showCheck()
+                  ? EmailCheck(
+                      controller: controller,
+                      onResult: (val) {
+                        _currentScreen.set(val);
+                        showCheck.value = false;
+                      },
+                    )
                   : (switch (_currentScreen.watch(context)) {
                       AuthScreen.login => LoginScreen(controller: controller),
                       AuthScreen.register =>

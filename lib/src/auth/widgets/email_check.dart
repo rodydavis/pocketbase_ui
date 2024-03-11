@@ -5,16 +5,20 @@ import '../controller.dart';
 import '../screens/sign_in.dart';
 
 class EmailCheck extends StatefulWidget {
-  const EmailCheck({super.key, required this.controller});
+  const EmailCheck({
+    super.key,
+    required this.controller,
+    required this.onResult,
+  });
 
   final AuthController controller;
+  final ValueChanged<AuthScreen> onResult;
 
   @override
   State<EmailCheck> createState() => _EmailCheckState();
 }
 
 class _EmailCheckState extends State<EmailCheck> {
-  final _currentScreen = signal<AuthScreen?>(null);
   final controller = TextEditingController();
   final formKey = GlobalKey<FormState>();
   final loading = signal(false);
@@ -28,9 +32,9 @@ class _EmailCheckState extends State<EmailCheck> {
       try {
         final model = await widget.controller.checkIfUserExistsForEmail(email);
         if (model != null) {
-          _currentScreen.value = AuthScreen.login;
+          widget.onResult(AuthScreen.login);
         } else {
-          _currentScreen.value = AuthScreen.register;
+          widget.onResult(AuthScreen.register);
         }
       } catch (e, t) {
         messenger.showSnackBar(SnackBar(
@@ -49,19 +53,6 @@ class _EmailCheckState extends State<EmailCheck> {
   @override
   Widget build(BuildContext context) {
     return Watch((context) {
-      final screen = _currentScreen();
-      if (screen == AuthScreen.login) {
-        return LoginScreen(
-          controller: widget.controller,
-          email: controller.text,
-        );
-      }
-      if (screen == AuthScreen.register) {
-        return RegisterScreen(
-          controller: widget.controller,
-          email: controller.text,
-        );
-      }
       return Form(
         key: formKey,
         child: Column(
