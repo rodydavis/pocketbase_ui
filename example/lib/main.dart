@@ -48,7 +48,7 @@ class AppState extends State<App> {
 
   late final _router = GoRouter(
     initialLocation: '/',
-    refreshListenable: _controller.auth$.toValueListenable(),
+    refreshListenable: _controller.user$.toValueListenable(),
     redirect: (context, state) {
       if (!_controller.isSignedIn$()) return '/sign-in';
       return null;

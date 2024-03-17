@@ -28,20 +28,16 @@ class AuthController {
   final String authCollectionIrOrName;
   late final authService = client.collection(authCollectionIrOrName);
   final String Function(String)? emailCheckUrl;
-  final Signal<String?> auth$ = signal(null);
   final Signal<RecordModel?> user$ = signal(null);
 
   late final ReadonlySignal<bool> isSignedIn$ = computed(() {
-    auth$.value;
-    final model = client.offlineAuthStore.model;
-    return model != null && client.offlineAuthStore.isValid;
+    return user$() != null &&
+        user$()!.id.isNotEmpty &&
+        client.offlineAuthStore.isValid;
   });
 
   late final ReadonlySignal<String?> userId$ = computed(() {
-    auth$.value;
-    final model = client.offlineAuthStore.model;
-    if (model is RecordModel) return model.id;
-    return '';
+    return user$() != null && user$()!.id.isNotEmpty ? user$()!.id : null;
   });
 
   final methods$ = signal<AuthMethodsList?>(null);
@@ -58,7 +54,6 @@ class AuthController {
     this.authCollectionIrOrName = 'users',
     this.emailCheckUrl,
   }) {
-    connects.add(connect(auth$, client.offlineAuthStore.authEvents));
     connects.add(connect(user$, client.offlineAuthStore.modelEvents));
     for (final provider in providers) {
       provider.client = client;
@@ -107,7 +102,6 @@ class AuthController {
 
   Future<void> logout() async {
     client.authStore.clear();
-    auth$.value = null;
     user$.value = null;
   }
 
