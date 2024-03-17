@@ -7,12 +7,14 @@ class ProfileScreen extends StatefulWidget {
     this.automaticallyImplyLeading = true,
     this.actions = const [],
     this.children = const [],
+    required this.onLogOut,
   });
 
   final bool automaticallyImplyLeading;
   final AuthController controller;
   final List<Widget> actions;
   final List<Widget> children;
+  final VoidCallback onLogOut;
 
   @override
   State<ProfileScreen> createState() => _ProfileScreenState();
@@ -105,7 +107,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   void dispose() {
     _cleanup?.call();
-    _user.dispose();
     super.dispose();
   }
 
@@ -151,7 +152,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
             : [
                 ...widget.actions,
                 TextButton(
-                  onPressed: () => widget.controller.logout(),
+                  onPressed: () {
+                    widget.controller.logout();
+                    widget.onLogOut();
+                  },
                   child: const Text('Logout'),
                 ),
               ],
