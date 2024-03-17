@@ -31,13 +31,13 @@ class AuthController {
   final Signal<RecordModel?> user$ = signal(null);
 
   late final ReadonlySignal<bool> isSignedIn$ = computed(() {
-    return user$() != null &&
-        user$()!.id.isNotEmpty &&
-        client.offlineAuthStore.isValid;
+    if (!client.offlineAuthStore.isValid) return false;
+    return user$() != null && user$()!.id.isNotEmpty;
   });
 
   late final ReadonlySignal<String?> userId$ = computed(() {
-    return user$() != null && user$()!.id.isNotEmpty ? user$()!.id : null;
+    if (!client.offlineAuthStore.isValid) return null;
+    return user$()?.id;
   });
 
   final methods$ = signal<AuthMethodsList?>(null);
