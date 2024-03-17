@@ -68,11 +68,6 @@ class AuthController {
     healthTimer = Timer.periodic(healthCheckDelay, (_) {
       checkHealth();
     });
-    _cleanup = effect(() {
-      if (user$.value != null && user$.value!.id.isEmpty) {
-        logout().ignore();
-      }
-    });
   }
 
   void setHealthy(bool value) async {
