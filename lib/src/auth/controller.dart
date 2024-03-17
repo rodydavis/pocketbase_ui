@@ -104,6 +104,8 @@ class AuthController {
 
   Future<void> logout() async {
     client.authStore.clear();
+    auth$.value = null;
+    user$.value = null;
   }
 
   Future<void> delete() async {

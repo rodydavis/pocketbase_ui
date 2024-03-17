@@ -12,7 +12,7 @@ class EmailCheck extends StatefulWidget {
   });
 
   final AuthController controller;
-  final ValueChanged<AuthScreen> onResult;
+  final ValueChanged<(String, AuthScreen)> onResult;
 
   @override
   State<EmailCheck> createState() => _EmailCheckState();
@@ -32,9 +32,9 @@ class _EmailCheckState extends State<EmailCheck> {
       try {
         final model = await widget.controller.checkIfUserExistsForEmail(email);
         if (model != null) {
-          widget.onResult(AuthScreen.login);
+          widget.onResult((email, AuthScreen.login));
         } else {
-          widget.onResult(AuthScreen.register);
+          widget.onResult((email, AuthScreen.register));
         }
       } catch (e, t) {
         messenger.showSnackBar(SnackBar(

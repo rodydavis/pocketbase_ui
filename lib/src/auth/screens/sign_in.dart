@@ -46,6 +46,7 @@ class SignInScreenState extends State<SignInScreen> {
   late final AuthController controller = widget.controller;
   final _currentError = signal<String?>(null);
   final showCheck = signal(true);
+  String? email;
 
   void setError(Object? error) {
     if (error is ClientException) {
@@ -134,14 +135,20 @@ class SignInScreenState extends State<SignInScreen> {
                   ? EmailCheck(
                       controller: controller,
                       onResult: (val) {
-                        _currentScreen.set(val);
+                        _currentScreen.set(val.$2);
+                        email = val.$1;
                         showCheck.value = false;
                       },
                     )
                   : (switch (_currentScreen.watch(context)) {
-                      AuthScreen.login => LoginScreen(controller: controller),
-                      AuthScreen.register =>
-                        RegisterScreen(controller: controller),
+                      AuthScreen.login => LoginScreen(
+                          controller: controller,
+                          email: email,
+                        ),
+                      AuthScreen.register => RegisterScreen(
+                          controller: controller,
+                          email: email,
+                        ),
                     }),
             );
           },
