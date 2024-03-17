@@ -50,6 +50,7 @@ class AuthController {
   Timer? healthTimer;
   final connects = <Connect>[];
   Duration healthCheckDelay = const Duration(seconds: 30);
+  EffectCleanup? _cleanup;
 
   AuthController({
     required this.client,
@@ -66,6 +67,11 @@ class AuthController {
     checkHealth();
     healthTimer = Timer.periodic(healthCheckDelay, (_) {
       checkHealth();
+    });
+    _cleanup = effect(() {
+      if (user$.value != null && user$.value!.id.isEmpty) {
+        logout().ignore();
+      }
     });
   }
 
@@ -96,6 +102,7 @@ class AuthController {
   }
 
   void dispose() {
+    _cleanup?.call();
     healthTimer?.cancel();
     for (final item in connects) {
       item.dispose();
