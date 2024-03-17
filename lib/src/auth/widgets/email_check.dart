@@ -81,6 +81,7 @@ class _EmailCheckState extends State<EmailCheck> {
                   if (!val.contains('@')) return 'Email much contain @';
                   return null;
                 },
+                onEditingComplete: loading() ? null : () => checkEmail(context),
               ),
             ),
             const SizedBox(height: 20),

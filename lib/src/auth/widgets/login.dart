@@ -65,6 +65,17 @@ class _LoginScreenState extends State<LoginScreen> {
     setLoading(false);
   }
 
+  Future<void> save(
+    BuildContext context,
+    EmailAuthProvider? emailProvider,
+  ) async {
+    if (emailProvider == null) return;
+    if (formKey.currentState!.validate()) {
+      formKey.currentState!.save();
+      await login(context, emailProvider);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Watch((context) {
@@ -169,13 +180,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       FilledButton(
                         onPressed: loading()
                             ? () => setLoading(false)
-                            : () async {
-                                if (emailProvider == null) return;
-                                if (formKey.currentState!.validate()) {
-                                  formKey.currentState!.save();
-                                  await login(context, emailProvider);
-                                }
-                              },
+                            : () => save(context, emailProvider),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [

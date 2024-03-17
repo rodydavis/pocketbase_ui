@@ -102,6 +102,7 @@ class AuthController {
     for (final item in connects) {
       item.dispose();
     }
+    connects.clear();
   }
 
   Future<void> logout() async {
