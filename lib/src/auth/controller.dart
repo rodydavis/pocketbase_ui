@@ -27,7 +27,8 @@ class AuthController {
   final AuthErrorCallback errorCallback;
   final String authCollectionIrOrName;
   late final authService = client.collection(authCollectionIrOrName);
-  final String Function(String)? emailCheckUrl;
+  final String Function(String) emailCheckUrl;
+  final String Function(String) externalAuthMethodsUrl;
   final Signal<RecordModel?> user$ = signal(null);
 
   late final ReadonlySignal<bool> isSignedIn$ = computed(() {
@@ -52,7 +53,8 @@ class AuthController {
     required this.client,
     required this.errorCallback,
     this.authCollectionIrOrName = 'users',
-    this.emailCheckUrl,
+    required this.emailCheckUrl,
+    required this.externalAuthMethodsUrl,
   }) {
     connects.add(connect(user$, client.offlineAuthStore.modelEvents));
     for (final provider in providers) {
@@ -125,16 +127,23 @@ class AuthController {
     }
   }
 
-  bool get emailCheck => emailCheckUrl != null;
-
   Future<RecordModel?> checkIfUserExistsForEmail(String email) async {
-    final target = emailCheckUrl?.call(email);
-    if (target == null) return null;
+    final target = emailCheckUrl(email);
     final url = client.buildUrl(target);
     final res = await client.httpClientFactory().get(url);
     if (res.statusCode == 200) {
       return RecordModel.fromJson(jsonDecode(res.body));
     }
     return null;
+  }
+
+  Future<List<String>> getExternalAuthMethodsForEmail(String email) async {
+    final target = externalAuthMethodsUrl(email);
+    final url = client.buildUrl(target);
+    final res = await client.httpClientFactory().get(url);
+    if (res.statusCode == 200) {
+      return (jsonDecode(res.body) as List).cast<String>();
+    }
+    return [];
   }
 }

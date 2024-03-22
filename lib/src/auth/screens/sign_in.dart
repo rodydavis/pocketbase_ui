@@ -131,25 +131,14 @@ class SignInScreenState extends State<SignInScreen> {
               }
             }
             return SingleChildScrollView(
-              child: controller.emailCheck && showCheck()
-                  ? EmailCheck(
-                      controller: controller,
-                      onResult: (val) {
-                        _currentScreen.set(val.$2);
-                        email = val.$1;
-                        showCheck.value = false;
-                      },
-                    )
-                  : (switch (_currentScreen.watch(context)) {
-                      AuthScreen.login => LoginScreen(
-                          controller: controller,
-                          email: email,
-                        ),
-                      AuthScreen.register => RegisterScreen(
-                          controller: controller,
-                          email: email,
-                        ),
-                    }),
+              child: EmailCheck(
+                controller: controller,
+                onResult: (val) {
+                  _currentScreen.set(val.$2);
+                  email = val.$1;
+                  showCheck.value = false;
+                },
+              ),
             );
           },
         ),

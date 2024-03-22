@@ -44,6 +44,8 @@ class AppState extends State<App> {
   late final _controller = AuthController(
     client: pb,
     errorCallback: (error) {},
+    emailCheckUrl: (email) => throw UnimplementedError(),
+    externalAuthMethodsUrl: (email) => throw UnimplementedError(),
   );
 
   late final _router = GoRouter(
@@ -69,7 +71,10 @@ class AppState extends State<App> {
           GoRoute(
             path: 'profile',
             builder: (context, state) {
-              return ProfileScreen(controller: _controller);
+              return ProfileScreen(
+                controller: _controller,
+                onLogOut: () {},
+              );
             },
           ),
         ],

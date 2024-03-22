@@ -21,6 +21,43 @@ class _LoginScreenState extends State<LoginScreen> {
   final showPassword = signal(false);
   final _currentError = signal<String?>(null);
   final loading = signal(false);
+  final checkedProviders = signal(false);
+  final providersAllowed = signal<List<String>>([]);
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      checkProviders(context);
+    });
+  }
+
+  Future<void> checkProviders(BuildContext context) async {
+    final email = (widget.email ?? '').trim();
+    if (email.isEmpty) return;
+    loading.value = true;
+    final messenger = ScaffoldMessenger.of(context);
+    if (formKey.currentState!.validate()) {
+      formKey.currentState!.save();
+      try {
+        final res = await widget //
+            .controller
+            .getExternalAuthMethodsForEmail(email);
+        providersAllowed.value = res;
+      } catch (e, t) {
+        messenger.showSnackBar(SnackBar(
+          content: Text(
+              'Error checking avaliable external auth providers "$email": $e'),
+        ));
+        widget.controller.client.storage.log.log(
+          'Error checking avaliable external auth providers "$email"',
+          error: e,
+          stackTrace: t,
+        );
+      }
+    }
+    loading.value = false;
+  }
 
   late final AuthController controller = widget.controller;
   late final client = controller.client;
@@ -99,7 +136,7 @@ class _LoginScreenState extends State<LoginScreen> {
               children: [
                 Expanded(
                   child: Text(
-                    widget.controller.emailCheck
+                    widget.email != null
                         ? 'Welcome Back!'
                         : 'Login to existing account',
                     style: fonts.displaySmall,
@@ -127,6 +164,11 @@ class _LoginScreenState extends State<LoginScreen> {
                     if (val == null) return '$label required';
                     if (val.isEmpty) return '$label cannot be empty';
                     return null;
+                  },
+                  onEditingComplete: () {
+                    if (username.text.contains('@')) {
+                      checkProviders(context);
+                    }
                   },
                 );
               }),
@@ -234,13 +276,14 @@ class _LoginScreenState extends State<LoginScreen> {
             ),
             gap,
             for (final provider in externalAuthProviders) ...[
-              ListTile(
-                contentPadding: EdgeInsets.zero,
-                title: FilledButton.tonal(
-                  onPressed: () => login(context, provider),
-                  child: Text('Sign in with ${provider.label}'),
+              if (providersAllowed().contains(provider.name))
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: FilledButton.tonal(
+                    onPressed: () => login(context, provider),
+                    child: Text('Sign in with ${provider.label}'),
+                  ),
                 ),
-              ),
             ],
           ],
         ),
